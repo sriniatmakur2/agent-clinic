@@ -415,8 +415,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 9 — Auth & roles: DONE
 
-- Not committed yet (commit hash to be recorded once the user asks for
-  the commit).
+- Commit: `dceb2ec` ("Phase 9: auth & roles") on `main`.
 - Implemented from `specs/phase-9-plan.md`, including its "Decisions I'm
   proposing" section, which the user approved as written.
 - New deps: `@fastify/cookie` 11 and `@fastify/session` 11. The session
