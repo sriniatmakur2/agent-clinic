@@ -357,8 +357,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 8 — Supervisor view: DONE
 
-- Not yet committed as of writing this — commit hash to be filled in once
-  the user asks for a commit.
+- Committed as `d0503e4`.
 - Implemented from `specs/phase-8-plan.md`; decisions there were made with
   the user (no standalone supervisor browse pages — a picker doubles as the
   entry point and the dashboard is the detail view; one supervisor per
