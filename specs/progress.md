@@ -40,7 +40,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 1 — Browse agents: DONE
 
-- Commit: not yet committed — awaiting explicit request per `CLAUDE.md`.
+- Commit: `fd99ff0` ("Phase 1: browse agents") on `main`.
 - `agents` table added to `src/db/schema.ts` (`name`, `role`, `bio`,
   `avatarEmoji`). Migration `drizzle/0001_ambitious_nick_fury.sql`,
   applied automatically on server start like `boot_log`.
