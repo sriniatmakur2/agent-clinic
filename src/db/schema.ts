@@ -58,8 +58,9 @@ export const therapistSpecialties = sqliteTable("therapist_specialties", {
     .references(() => ailments.id),
 });
 
-// An agent's request for a session with a therapist. therapyId stays null
-// until the therapist prescribes one (Phase 6).
+// An agent's request for a session with a therapist. Starts as "requested"
+// with therapyId/notes/prescribedAt null; the therapist prescribing a therapy
+// moves it to "prescribed" (and can revise the prescription afterwards).
 export const appointments = sqliteTable("appointments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   agentId: integer("agent_id")
@@ -71,5 +72,7 @@ export const appointments = sqliteTable("appointments", {
   requestedAt: text("requested_at").notNull(),
   status: text("status").notNull().default("requested"),
   therapyId: integer("therapy_id").references(() => therapies.id),
+  notes: text("notes"),
+  prescribedAt: text("prescribed_at"),
   createdAt: text("created_at").notNull(),
 });

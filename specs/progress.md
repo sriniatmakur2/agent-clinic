@@ -245,10 +245,64 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 - None beyond the route placement noted above.
 
+## Phase 6 — Therapist view & prescribing: DONE
+
+- Commit: not yet committed (fill in the hash once the user commits).
+- Implemented from `specs/phase-6-plan.md`; the design decisions there were
+  made with the user (dashboard as its own page, prescribe form on the
+  appointment page, editable prescriptions, allowed on past and upcoming
+  appointments, seeded demo appointments).
+- `appointments` gains nullable `notes` and `prescribedAt` (ISO text).
+  Migration `drizzle/0006_mushy_inhumans.sql`, applied on server start.
+  Lifecycle: `"requested"` → `"prescribed"`; stays revisable after that.
+- `seedAppointments()` in `src/db/seed.ts` (wired into `seed()`, same
+  skip-if-non-empty check): 5 appointments with times relative to seed
+  time — 2 upcoming requested, 2 past prescribed (therapy + notes), 1 past
+  still requested. Dr. Ada Backprop and Dr. Tokenia Window have both
+  sections populated; Dr. Retry Backoff has none (empty-state demo).
+- `getAilmentsByAgent()` in `src/routes/appointments.ts` — one query for a
+  set of agents' distinct reported ailments, keyed by agent id. Used by the
+  dashboard and the appointment page.
+- `GET /therapists/:id/appointments` in `src/routes/therapists.ts` → new
+  `src/views/therapists/appointments.ejs` (+ an `_appointment-row.ejs`
+  partial via EJS `include`). Upcoming soonest-first, past most-recent-first;
+  ailments matching the therapist's specialties are highlighted. 404 for
+  unknown/non-numeric ids. "View appointments" link added to
+  `therapists/show.ejs`.
+- `src/routes/appointments.ts`: `findAppointment()` +
+  `renderAppointmentShow()` (used by GET and the 400 re-render) and
+  `POST /appointments/:id/prescription` (404 unknown appointment; 400 inline
+  error for missing/unknown/garbage therapy or empty body, keeping submitted
+  values; notes trimmed, empty → null; sets status/therapy/notes/
+  prescribedAt and 302s back). `appointments/show.ejs` now shows the agent's
+  ailments, the prescribed therapy (linked) + notes, status-dependent header
+  copy, a back link to the therapist's dashboard, and the prescribe/revise
+  form pre-filled with current values.
+- Verified with `npm run dev` + `curl` + `sqlite3`: migrate, seed, and the
+  seed skip path; all 4 dashboards (incl. the empty one) and the 404s;
+  prescribe then revise (blank notes stored as NULL); the 400s and 404s
+  above; every existing page still 200; both Phase 5 booking endpoints still
+  302 and the new bookings show on the dashboard; past-time booking still
+  400. `npm run lint` and `tsc --noEmit` clean. Verification data was
+  removed afterwards (test bookings deleted, seeded appointment reset to
+  `requested`). The 3 Phase 5 test appointments were deleted, with the
+  user's OK, so the seed could run locally. No browser click-through by
+  Claude — worth a quick manual look.
+
+### Deviations from the specs
+
+- None. Small extra: the dashboard link reads "Review / revise" for
+  prescribed rows, "Review / prescribe" otherwise.
+- Local dev DB only: Nova also has "Context Window Anxiety" from earlier
+  manual testing — not part of the seed.
+- `prettier --check src` still flags the same long-line style noted in
+  Phase 3; not reformatted, to keep the diff scoped.
+
 ## Next phase
 
-Phase 6 — Therapist view & prescribing. See `specs/roadmap.md` for its
-scope. The `appointments.therapyId` column it will set already exists.
+Phase 7 — View & manage bookings. See `specs/roadmap.md` for its scope.
+Appointments now carry `status` (`requested`/`prescribed`), `therapyId`,
+`notes`, and `prescribedAt`; cancel/reschedule will need a new status value.
 
 Backlog note: Phase 11 (navigation back to home from the list pages —
 now `/agents`, `/therapies`, and `/therapists`) is in `specs/roadmap.md`,

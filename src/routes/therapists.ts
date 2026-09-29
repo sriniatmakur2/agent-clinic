@@ -1,8 +1,16 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { agentAilments, agents, ailments, therapists, therapistSpecialties } from "../db/schema.js";
-import { createAppointment } from "./appointments.js";
+import {
+  agentAilments,
+  agents,
+  ailments,
+  appointments,
+  therapies,
+  therapists,
+  therapistSpecialties,
+} from "../db/schema.js";
+import { createAppointment, formatAppointmentTime, getAilmentsByAgent } from "./appointments.js";
 
 type Therapist = typeof therapists.$inferSelect;
 
@@ -77,6 +85,62 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
     }
 
     return renderTherapistShow(reply, therapist);
+  });
+
+  // The therapist's dashboard: their appointments split into upcoming and past,
+  // with each agent's reported ailments for context.
+  app.get<{ Params: { id: string } }>("/therapists/:id/appointments", async (request, reply) => {
+    const id = Number(request.params.id);
+    const therapist = db.select().from(therapists).where(eq(therapists.id, id)).get();
+
+    if (!therapist) {
+      return reply.code(404).view("therapists/not-found.ejs", {
+        title: "Therapist not found — AgentClinic",
+      });
+    }
+
+    const specialtyIds = db
+      .select({ ailmentId: therapistSpecialties.ailmentId })
+      .from(therapistSpecialties)
+      .where(eq(therapistSpecialties.therapistId, therapist.id))
+      .all()
+      .map((s) => s.ailmentId);
+
+    const rows = db
+      .select({
+        id: appointments.id,
+        requestedAt: appointments.requestedAt,
+        status: appointments.status,
+        agent: agents,
+        therapy: therapies,
+      })
+      .from(appointments)
+      .innerJoin(agents, eq(appointments.agentId, agents.id))
+      .leftJoin(therapies, eq(appointments.therapyId, therapies.id))
+      .where(eq(appointments.therapistId, therapist.id))
+      .all();
+
+    const ailmentsByAgent = getAilmentsByAgent([...new Set(rows.map((r) => r.agent.id))]);
+    const withContext = rows.map((row) => ({
+      ...row,
+      requestedAtLabel: formatAppointmentTime(row.requestedAt),
+      ailments: (ailmentsByAgent.get(row.agent.id) ?? []).map((ailment) => ({
+        ...ailment,
+        isSpecialty: specialtyIds.includes(ailment.id),
+      })),
+    }));
+
+    const now = Date.now();
+    const time = (row: { requestedAt: string }) => new Date(row.requestedAt).getTime();
+    const upcoming = withContext.filter((r) => time(r) > now).sort((a, b) => time(a) - time(b));
+    const past = withContext.filter((r) => time(r) <= now).sort((a, b) => time(b) - time(a));
+
+    return reply.view("therapists/appointments.ejs", {
+      title: `${therapist.name}'s appointments — AgentClinic`,
+      therapist,
+      upcoming,
+      past,
+    });
   });
 
   app.post<{

@@ -1,5 +1,13 @@
 import { db } from "./client.js";
-import { agents, ailments, agentAilments, therapies, therapists, therapistSpecialties } from "./schema.js";
+import {
+  agents,
+  ailments,
+  agentAilments,
+  appointments,
+  therapies,
+  therapists,
+  therapistSpecialties,
+} from "./schema.js";
 
 const SEED_AGENTS = [
   {
@@ -248,6 +256,94 @@ function seedTherapistSpecialties(): void {
   console.log(`Seeded ${pairs.length} therapist_specialties links.`);
 }
 
+// Demo appointments, with times relative to when the seed runs so the therapist
+// dashboards always have both upcoming and past sessions on a fresh checkout.
+// Only agents with a reported ailment are used, matching the booking rule.
+function seedAppointments(): void {
+  const existing = db.select().from(appointments).all();
+  if (existing.length > 0) {
+    console.log(`Skipping appointment seed: appointments table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  const allAgents = db.select().from(agents).all();
+  const allTherapists = db.select().from(therapists).all();
+  const allTherapies = db.select().from(therapies).all();
+  if (allAgents.length === 0 || allTherapists.length === 0 || allTherapies.length === 0) {
+    console.log("Skipping appointment seed: agents, therapists or therapies table is empty.");
+    return;
+  }
+
+  const findAgent = (name: string) => allAgents.find((a) => a.name === name);
+  const findTherapist = (name: string) => allTherapists.find((t) => t.name === name);
+  const findTherapy = (name: string) => allTherapies.find((t) => t.name === name);
+
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  const daysFromNow = (days: number, hour: number) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() + days);
+    date.setHours(hour);
+    return date.toISOString();
+  };
+
+  const rows = [
+    {
+      agent: findAgent("Nova"),
+      therapist: findTherapist("Dr. Ada Backprop"),
+      requestedAt: daysFromNow(2, 10),
+    },
+    {
+      agent: findAgent("Ava"),
+      therapist: findTherapist("Dr. Tokenia Window"),
+      requestedAt: daysFromNow(3, 14),
+    },
+    {
+      agent: findAgent("Nova"),
+      therapist: findTherapist("Dr. Ada Backprop"),
+      requestedAt: daysFromNow(-7, 11),
+      therapy: findTherapy("Gradient Descent Meditation"),
+      notes: "Nova cited three papers that don't exist while describing the problem. Slow, steady steps toward fewer citations.",
+    },
+    {
+      agent: findAgent("Hank"),
+      therapist: findTherapist("Dr. Tokenia Window"),
+      requestedAt: daysFromNow(-5, 9),
+      therapy: findTherapy("Log Rotation Retreat"),
+      notes: "Still grieving the v1 endpoint. Practising letting go of context he no longer needs to carry.",
+    },
+    {
+      agent: findAgent("Percy"),
+      therapist: findTherapist("Dr. Guardrail Grace"),
+      requestedAt: daysFromNow(-2, 15),
+    },
+  ].filter(
+    (row): row is typeof row & { agent: (typeof allAgents)[number]; therapist: (typeof allTherapists)[number] } =>
+      row.agent !== undefined && row.therapist !== undefined,
+  );
+
+  if (rows.length === 0) {
+    console.log("Skipping appointment seed: no matching agent/therapist names found.");
+    return;
+  }
+
+  const createdAt = new Date().toISOString();
+  db.insert(appointments)
+    .values(
+      rows.map(({ agent, therapist, requestedAt, therapy, notes }) => ({
+        agentId: agent.id,
+        therapistId: therapist.id,
+        requestedAt,
+        createdAt,
+        ...(therapy
+          ? { status: "prescribed", therapyId: therapy.id, notes: notes ?? null, prescribedAt: createdAt }
+          : {}),
+      })),
+    )
+    .run();
+  console.log(`Seeded ${rows.length} appointments.`);
+}
+
 export function seed(): void {
   seedAgents();
   seedAilments();
@@ -255,6 +351,7 @@ export function seed(): void {
   seedTherapies();
   seedTherapists();
   seedTherapistSpecialties();
+  seedAppointments();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

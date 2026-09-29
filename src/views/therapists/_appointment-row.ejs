@@ -1,0 +1,44 @@
+<li class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-start sm:justify-between">
+  <div class="flex items-start gap-3">
+    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xl">
+      <%= appointment.agent.avatarEmoji %>
+    </span>
+    <div class="flex flex-col gap-1.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/agents/<%= appointment.agent.id %>" class="font-semibold text-slate-900 hover:text-teal-700 hover:underline">
+          <%= appointment.agent.name %>
+        </a>
+        <% if (appointment.status === "prescribed") { %>
+          <span class="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-teal-700">prescribed</span>
+        <% } else { %>
+          <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700"><%= appointment.status %></span>
+        <% } %>
+      </div>
+      <p class="text-sm text-slate-600"><%= appointment.requestedAtLabel %></p>
+      <% if (appointment.ailments.length > 0) { %>
+        <div class="flex flex-wrap gap-1.5">
+          <% appointment.ailments.forEach((ailment) => { %>
+            <span
+              class="rounded-full px-2 py-0.5 text-xs font-medium <%= ailment.isSpecialty ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700" %>"
+              <%- ailment.isSpecialty ? 'title="One of your specialties"' : "" %>
+            ><%= ailment.name %></span>
+          <% }) %>
+        </div>
+      <% } %>
+      <p class="text-sm">
+        <% if (appointment.therapy) { %>
+          <span class="text-slate-500">Prescribed:</span>
+          <span class="font-medium text-slate-900"><%= appointment.therapy.icon %> <%= appointment.therapy.name %></span>
+        <% } else { %>
+          <span class="text-slate-500">Not yet prescribed</span>
+        <% } %>
+      </p>
+    </div>
+  </div>
+  <a
+    href="/appointments/<%= appointment.id %>"
+    class="shrink-0 self-start rounded-md border border-teal-600 px-3 py-1.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+  >
+    <%= appointment.status === "prescribed" ? "Review / revise" : "Review / prescribe" %>
+  </a>
+</li>

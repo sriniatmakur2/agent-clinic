@@ -1,0 +1,43 @@
+<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
+  <a href="/therapists/<%= therapist.id %>" class="text-sm text-teal-700 hover:underline">
+    &larr; Back to <%= therapist.name %>
+  </a>
+
+  <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-teal-50 text-3xl">
+      <%= therapist.avatarEmoji %>
+    </span>
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900"><%= therapist.name %>'s appointments</h1>
+      <p class="text-sm text-slate-600">
+        Review each agent's ailments and prescribe a therapy. Ailments you specialize in are highlighted.
+      </p>
+    </div>
+  </div>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-lg font-semibold text-slate-900">Upcoming</h2>
+    <% if (upcoming.length === 0) { %>
+      <p class="text-sm text-slate-500">No upcoming appointments.</p>
+    <% } else { %>
+      <ul class="flex flex-col gap-3">
+        <% upcoming.forEach((appointment) => { %>
+          <%- include("_appointment-row", { appointment }) %>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-lg font-semibold text-slate-900">Past</h2>
+    <% if (past.length === 0) { %>
+      <p class="text-sm text-slate-500">No past appointments.</p>
+    <% } else { %>
+      <ul class="flex flex-col gap-3">
+        <% past.forEach((appointment) => { %>
+          <%- include("_appointment-row", { appointment }) %>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</main>

@@ -7,6 +7,12 @@
     </span>
     <h1 class="text-2xl font-bold tracking-tight text-slate-900"><%= therapist.name %></h1>
     <p class="max-w-md text-slate-600"><%= therapist.bio %></p>
+    <a
+      href="/therapists/<%= therapist.id %>/appointments"
+      class="rounded-md border border-teal-600 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+    >
+      View appointments
+    </a>
   </div>
 
   <section class="flex flex-col gap-3">
