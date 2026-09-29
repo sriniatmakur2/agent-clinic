@@ -7,6 +7,7 @@ import fastifyFormbody from "@fastify/formbody";
 import ejs from "ejs";
 import { homeRoutes } from "./routes/home.js";
 import { agentRoutes } from "./routes/agents.js";
+import { therapyRoutes } from "./routes/therapies.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +29,7 @@ export function buildApp(): FastifyInstance {
 
   app.register(homeRoutes);
   app.register(agentRoutes);
+  app.register(therapyRoutes);
 
   return app;
 }

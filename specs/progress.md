@@ -113,12 +113,51 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
   assignment in the route handler with a 500. Fixed with
   `request.body ?? {}`.
 
-## Phase 3 — Therapy catalog: NOT STARTED
+## Phase 3 — Therapy catalog: DONE (not yet committed)
 
-Next up per `specs/roadmap.md`:
+- Commit: _pending_ — fill in once the user asks for the commit.
+- Decisions made with the user before implementation:
+  - `durationMinutes`: integer minutes (not free text).
+  - Therapies get an `icon` emoji field, matching the `avatarEmoji`
+    pattern from agents (Phase 1).
+  - 6 seed therapies, same playful/fictional tone as the ailments catalog.
+- `therapies` table (`name`, `description`, `durationMinutes`, `icon`)
+  added to `src/db/schema.ts`. Migration `drizzle/0003_known_satana.sql`,
+  applied automatically on server start like the existing tables.
+- `SEED_THERAPIES` (6 entries) + `seedTherapies()` in `src/db/seed.ts`,
+  wired into `seed()`; same skip-if-non-empty idempotency as the other
+  seed functions.
+- Routes in `src/routes/therapies.ts`: `GET /therapies` (list) and
+  `GET /therapies/:id` (detail, 404 via `therapies/not-found.ejs` —
+  non-numeric ids also 404). Registered in `src/app.ts`.
+- Views: `src/views/therapies/index.ejs`, `show.ejs`, `not-found.ejs`,
+  mirroring `src/views/agents/*`. `show.ejs` is display-only — therapies
+  aren't linked to agents or ailments until Phase 6.
+- Home page (`src/views/home.ejs`) now has a "Browse therapies" button
+  next to "Meet the agents".
+- Verified: `npm run db:migrate` + `db:seed` (6 therapies inserted), and
+  re-ran `db:seed` to confirm the skip path. Booted `npm run dev` and
+  `curl`'d `/` (has `/therapies` link), `/therapies` (all 6 listed),
+  `/therapies/1` and `/therapies/6` (200), `/therapies/999` and
+  `/therapies/abc` (404 with the not-found page); `/agents/1` still 200.
+  `npm run lint` and `tsc --noEmit` both clean. Browser click-through
+  was not done by Claude (no browser available) — worth a quick manual
+  look.
 
-- `therapies` table (name, description, duration).
-- List page and detail page for therapies.
+### Deviations from the specs
 
-No plan written yet — start by reading `specs/roadmap.md`'s Phase 3
-section and proposing a plan per `CLAUDE.md`.
+- None.
+- Note (pre-existing, not introduced this phase): `prettier --check src`
+  already flagged `src/routes/agents.ts` and `src/db/seed.ts` as of the
+  Phase 2 commit; `src/routes/therapies.ts` has the same long-line
+  style. Not fixed here to keep the phase's diff scoped — run
+  `npm run format` as a separate cleanup if wanted.
+
+## Next phase
+
+Phase 4 — Browse therapists. See `specs/roadmap.md` for its scope.
+
+Backlog note: Phase 11 (navigation back to home from `/agents` and
+`/therapies`) was appended to `specs/roadmap.md` after Phase 3, at the
+user's request, to be tackled separately — it doesn't change the order
+above.

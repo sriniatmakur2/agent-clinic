@@ -31,3 +31,11 @@ export const agentAilments = sqliteTable("agent_ailments", {
     .references(() => ailments.id),
   reportedAt: text("reported_at").notNull(),
 });
+
+export const therapies = sqliteTable("therapies", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  icon: text("icon").notNull(),
+});

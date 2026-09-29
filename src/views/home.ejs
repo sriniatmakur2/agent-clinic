@@ -7,10 +7,18 @@
     <p class="text-sm text-slate-500">Stack fully wired. Server boot #<%= bootCount %>.</p>
     <p class="text-sm text-slate-500">Last booted at <%= bootedAt %>.</p>
   </div>
-  <a
-    href="/agents"
-    class="rounded-md bg-teal-700 px-5 py-2.5 font-medium text-white shadow-sm transition hover:bg-teal-800"
-  >
-    Meet the agents
-  </a>
+  <div class="flex flex-wrap justify-center gap-3">
+    <a
+      href="/agents"
+      class="rounded-md bg-teal-700 px-5 py-2.5 font-medium text-white shadow-sm transition hover:bg-teal-800"
+    >
+      Meet the agents
+    </a>
+    <a
+      href="/therapies"
+      class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
+    >
+      Browse therapies
+    </a>
+  </div>
 </main>

@@ -139,6 +139,16 @@ information architecture has settled.
 
 **Demo:** "The full clinic, and it actually looks good."
 
+## Phase 11 — Navigation back to home
+
+Found while testing Phase 3: the `/agents` and `/therapies` list pages
+have no way to get back to the home page (`/`) — only the browser's back
+button.
+
+- Add a link back to `/` on the `/agents` and `/therapies` list pages.
+
+**Demo:** "From any list page, one click takes you back home."
+
 ## Explicitly deferred (not in initial phases)
 
 - Cloud deployment / shareable public URL.
