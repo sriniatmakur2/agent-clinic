@@ -113,9 +113,9 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
   assignment in the route handler with a 500. Fixed with
   `request.body ?? {}`.
 
-## Phase 3 — Therapy catalog: DONE (not yet committed)
+## Phase 3 — Therapy catalog: DONE
 
-- Commit: _pending_ — fill in once the user asks for the commit.
+- Commit: `64cb762` ("Phase 3: therapy catalog") on `main`.
 - Decisions made with the user before implementation:
   - `durationMinutes`: integer minutes (not free text).
   - Therapies get an `icon` emoji field, matching the `avatarEmoji`
