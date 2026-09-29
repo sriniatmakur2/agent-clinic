@@ -70,8 +70,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 2 — Ailments: DONE
 
-- Commit: pending (not yet committed as of this writing — see next
-  conversation's `git log` for the actual hash).
+- Commit: `4b897e6` ("Phase 2: ailments") on `main`.
 - `ailments` table (`name`, `description`) and `agent_ailments` join
   (`agentId`, `ailmentId`, `reportedAt`) added to `src/db/schema.ts`.
   Migration `drizzle/0002_minor_toad.sql`, applied automatically on
