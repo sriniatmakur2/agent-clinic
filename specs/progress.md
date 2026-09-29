@@ -247,7 +247,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 6 — Therapist view & prescribing: DONE
 
-- Commit: not yet committed (fill in the hash once the user commits).
+- Commit: `3d33808` ("Phase 6: therapist view & prescribing") on `main`.
 - Implemented from `specs/phase-6-plan.md`; the design decisions there were
   made with the user (dashboard as its own page, prescribe form on the
   appointment page, editable prescriptions, allowed on past and upcoming
