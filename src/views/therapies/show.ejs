@@ -1,14 +1,12 @@
-<main class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-16">
-  <a href="/therapies" class="text-sm text-teal-700 hover:underline">&larr; Back to therapies</a>
+<main class="page-narrow">
+  <a href="/therapies" class="back-link">&larr; Back to therapies</a>
 
-  <div class="flex flex-col items-center gap-4 rounded-lg border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
-    <span class="flex h-20 w-20 items-center justify-center rounded-full bg-teal-50 text-4xl">
-      <%= therapy.icon %>
-    </span>
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-slate-900"><%= therapy.name %></h1>
-      <p class="text-sm font-medium text-teal-700"><%= therapy.durationMinutes %> minutes</p>
+  <div class="card items-center py-8 text-center sm:py-10">
+    <span class="avatar-lg"><%= therapy.icon %></span>
+    <div class="flex flex-col items-center gap-2">
+      <h1 class="page-title"><%= therapy.name %></h1>
+      <span class="badge badge-teal"><%= therapy.durationMinutes %> minutes</span>
     </div>
-    <p class="max-w-md text-slate-600"><%= therapy.description %></p>
+    <p class="max-w-md text-pretty text-slate-600"><%= therapy.description %></p>
   </div>
 </main>

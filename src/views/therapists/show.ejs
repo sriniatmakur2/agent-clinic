@@ -1,31 +1,27 @@
-<main class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-16">
-  <a href="/therapists" class="text-sm text-teal-700 hover:underline">&larr; Back to therapists</a>
+<main class="page-narrow">
+  <a href="/therapists" class="back-link">&larr; Back to therapists</a>
 
-  <div class="flex flex-col items-center gap-4 rounded-lg border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
-    <span class="flex h-20 w-20 items-center justify-center rounded-full bg-teal-50 text-4xl">
-      <%= therapist.avatarEmoji %>
-    </span>
-    <h1 class="text-2xl font-bold tracking-tight text-slate-900"><%= therapist.name %></h1>
-    <p class="max-w-md text-slate-600"><%= therapist.bio %></p>
+  <div class="card items-center py-8 text-center sm:py-10">
+    <span class="avatar-lg"><%= therapist.avatarEmoji %></span>
+    <div class="flex flex-col gap-1">
+      <h1 class="page-title"><%= therapist.name %></h1>
+      <p class="text-sm font-medium text-teal-700">Therapist</p>
+    </div>
+    <p class="max-w-md text-pretty text-slate-600"><%= therapist.bio %></p>
     <% if (isSelf) { %>
-      <a
-        href="/therapists/<%= therapist.id %>/appointments"
-        class="rounded-md border border-teal-600 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
-      >
-        View appointments
-      </a>
+      <a href="/therapists/<%= therapist.id %>/appointments" class="btn btn-secondary">View appointments</a>
     <% } %>
   </div>
 
-  <section class="flex flex-col gap-3">
-    <h2 class="text-lg font-semibold text-slate-900">Specialties</h2>
+  <section class="card">
+    <h2 class="section-title">Specialties</h2>
     <% if (specialties.length === 0) { %>
-      <p class="text-sm text-slate-500">No specialties listed yet.</p>
+      <p class="empty-state">No specialties listed yet.</p>
     <% } else { %>
       <ul class="flex flex-col gap-3">
         <% specialties.forEach((specialty) => { %>
-          <li class="rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
-            <p class="font-medium text-slate-900"><%= specialty.name %></p>
+          <li class="rounded-lg border border-teal-100 bg-teal-50/60 px-4 py-3">
+            <p class="font-medium text-teal-900"><%= specialty.name %></p>
             <p class="text-sm text-slate-600"><%= specialty.description %></p>
           </li>
         <% }) %>
@@ -33,42 +29,39 @@
     <% } %>
   </section>
 
-  <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h2 class="text-lg font-semibold text-slate-900">Book an appointment</h2>
+  <section class="card">
+    <h2 class="section-title">Book an appointment</h2>
 
     <% if (bookingError) { %>
-      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= bookingError %></p>
+      <p class="alert-error" role="alert"><%= bookingError %></p>
     <% } %>
 
     <% if (!currentUser) { %>
-      <p class="text-sm text-slate-500">
-        <a href="/login?next=/therapists/<%= therapist.id %>" class="font-medium text-teal-700 hover:underline">Log in</a>
+      <p class="empty-state">
+        <a href="/login?next=/therapists/<%= therapist.id %>" class="link">Log in</a>
         as an agent to book with <%= therapist.name %>.
       </p>
     <% } else if (viewerAgentId === null) { %>
-      <p class="text-sm text-slate-500">Only agents can book appointments.</p>
+      <p class="empty-state">Only agents can book appointments.</p>
     <% } else if (!viewerHasAilment) { %>
-      <p class="text-sm text-slate-500">
-        <a href="/agents/<%= viewerAgentId %>" class="font-medium text-teal-700 hover:underline">Report an ailment</a>
+      <p class="empty-state">
+        <a href="/agents/<%= viewerAgentId %>" class="link">Report an ailment</a>
         first, so <%= therapist.name %> knows what you need help with.
       </p>
     <% } else { %>
-      <form method="POST" action="/therapists/<%= therapist.id %>/appointments" class="flex flex-col gap-3">
-        <label class="text-sm font-medium text-slate-700" for="requestedAt">Requested time</label>
-        <input
-          id="requestedAt"
-          name="requestedAt"
-          type="datetime-local"
-          value="<%= bookingForm.requestedAt ?? "" %>"
-          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-        />
+      <form method="POST" action="/therapists/<%= therapist.id %>/appointments" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="label" for="requestedAt">Requested time</label>
+          <input
+            id="requestedAt"
+            name="requestedAt"
+            type="datetime-local"
+            value="<%= bookingForm.requestedAt ?? "" %>"
+            class="input"
+          />
+        </div>
 
-        <button
-          type="submit"
-          class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-        >
-          Book appointment
-        </button>
+        <button type="submit" class="btn btn-primary self-start">Book appointment</button>
       </form>
     <% } %>
   </section>

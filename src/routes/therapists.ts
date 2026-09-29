@@ -36,7 +36,7 @@ function renderTherapistShow(
     db.select().from(agentAilments).where(eq(agentAilments.agentId, viewerAgentId)).get() !== undefined;
 
   return reply.code(options.code ?? 200).view("therapists/show.ejs", {
-    title: `${therapist.name} — AgentClinic`,
+    title: `${therapist.name} · AgentClinic`,
     therapist,
     specialties,
     isSelf: isTherapist(viewer, therapist.id),
@@ -62,7 +62,7 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
     }));
 
     return reply.view("therapists/index.ejs", {
-      title: "Therapists — AgentClinic",
+      title: "Therapists · AgentClinic",
       therapists: therapistsWithSpecialties,
     });
   });
@@ -73,7 +73,7 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
 
     if (!therapist) {
       return reply.code(404).view("therapists/not-found.ejs", {
-        title: "Therapist not found — AgentClinic",
+        title: "Therapist not found · AgentClinic",
       });
     }
 
@@ -93,7 +93,7 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
 
     if (!therapist) {
       return reply.code(404).view("therapists/not-found.ejs", {
-        title: "Therapist not found — AgentClinic",
+        title: "Therapist not found · AgentClinic",
       });
     }
     if (!isTherapist(user, therapist.id)) {
@@ -137,7 +137,7 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
     const past = withContext.filter((r) => time(r) <= now).sort((a, b) => time(b) - time(a));
 
     return reply.view("therapists/appointments.ejs", {
-      title: `${therapist.name}'s appointments — AgentClinic`,
+      title: `${therapist.name}'s appointments · AgentClinic`,
       therapist,
       upcoming,
       past,
@@ -160,7 +160,7 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
 
     if (!therapist) {
       return reply.code(404).view("therapists/not-found.ejs", {
-        title: "Therapist not found — AgentClinic",
+        title: "Therapist not found · AgentClinic",
       });
     }
     if (user.role !== "agent" || user.agentId === null) {

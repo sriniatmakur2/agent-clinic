@@ -141,6 +141,11 @@ information architecture has settled.
 
 ## Phase 11 — Navigation back to home
 
+> **Folded into Phase 10.** Phase 10's layout nav bar (logo link to `/`,
+> plus Agents / Therapies / Therapists and the viewer's dashboard) appears
+> on every page, including both list pages, so no separate phase is
+> needed. Kept here for the record.
+
 Found while testing Phase 3: the `/agents` and `/therapies` list pages
 have no way to get back to the home page (`/`) — only the browser's back
 button.

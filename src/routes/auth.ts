@@ -11,7 +11,7 @@ function renderLogin(
   const usernamesFor = (role: string) => allUsers.filter((u) => u.role === role).map((u) => u.username);
 
   return reply.code(options.code ?? 200).view("login.ejs", {
-    title: "Log in — AgentClinic",
+    title: "Log in · AgentClinic",
     error: options.error ?? null,
     username: options.username ?? "",
     next: isSafePath(options.next) ? options.next : "",

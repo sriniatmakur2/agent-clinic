@@ -1,15 +1,16 @@
-<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
-  <a href="/" class="text-sm text-teal-700 hover:underline">&larr; Back home</a>
-
-  <div class="rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h1 class="text-2xl font-bold tracking-tight text-slate-900">My appointments</h1>
-    <p class="text-sm text-slate-600"><%= agent.avatarEmoji %> <%= agent.name %>'s upcoming and past sessions.</p>
+<main class="page">
+  <div class="card flex-row items-start sm:items-center">
+    <span class="avatar"><%= agent.avatarEmoji %></span>
+    <div class="flex min-w-0 flex-col gap-1">
+      <h1 class="page-title">My appointments</h1>
+      <p class="text-sm text-slate-600"><%= agent.name %>'s upcoming and past sessions.</p>
+    </div>
   </div>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-lg font-semibold text-slate-900">Upcoming</h2>
+    <h2 class="section-title">Upcoming <span class="badge badge-slate"><%= upcoming.length %></span></h2>
     <% if (upcoming.length === 0) { %>
-      <p class="text-sm text-slate-500">No upcoming appointments.</p>
+      <p class="empty-state">No upcoming appointments. Book one from a therapist's page.</p>
     <% } else { %>
       <ul class="flex flex-col gap-3">
         <% upcoming.forEach((appointment) => { %>
@@ -20,9 +21,9 @@
   </section>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-lg font-semibold text-slate-900">Past</h2>
+    <h2 class="section-title">Past <span class="badge badge-slate"><%= past.length %></span></h2>
     <% if (past.length === 0) { %>
-      <p class="text-sm text-slate-500">No past appointments.</p>
+      <p class="empty-state">No past appointments yet.</p>
     <% } else { %>
       <ul class="flex flex-col gap-3">
         <% past.forEach((appointment) => { %>

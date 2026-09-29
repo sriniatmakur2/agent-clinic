@@ -1,0 +1,2 @@
+<%# One status pill for every appointment view: requested = amber, prescribed = teal, cancelled = slate. %>
+<span class="badge uppercase tracking-wide <%= status === "prescribed" ? "badge-teal" : status === "cancelled" ? "badge-slate" : "badge-amber" %>"><%= status %></span>

@@ -1,0 +1,15 @@
+<main class="page-narrow">
+  <div class="card items-center py-10 text-center">
+    <span class="avatar-lg" aria-hidden="true">🤒</span>
+    <p class="eyebrow"><%= code %></p>
+    <h1 class="page-title">Something went wrong</h1>
+    <p class="max-w-md text-slate-600">
+      <% if (code === 500) { %>
+        The clinic hit an unexpected error. Please try again in a moment.
+      <% } else { %>
+        The clinic couldn't handle that request.
+      <% } %>
+    </p>
+    <a href="/" class="btn btn-primary">&larr; Back home</a>
+  </div>
+</main>

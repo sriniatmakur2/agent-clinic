@@ -32,7 +32,7 @@ export async function supervisorRoutes(app: FastifyInstance): Promise<void> {
 
     if (!supervisor) {
       return reply.code(404).view("supervisors/not-found.ejs", {
-        title: "Supervisor not found — AgentClinic",
+        title: "Supervisor not found · AgentClinic",
       });
     }
     if (user.role !== "supervisor" || user.supervisorId !== supervisor.id) {
@@ -56,7 +56,7 @@ export async function supervisorRoutes(app: FastifyInstance): Promise<void> {
     });
 
     return reply.view("supervisors/show.ejs", {
-      title: `${supervisor.name}'s team — AgentClinic`,
+      title: `${supervisor.name}'s team · AgentClinic`,
       supervisor,
       agentSections,
     });

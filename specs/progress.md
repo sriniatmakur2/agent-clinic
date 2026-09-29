@@ -520,10 +520,117 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 - The forbidden page's "Log in as someone else" is a logout button,
   because logout is a POST.
 
+## Phase 10 — Visual polish: DONE
+
+- Commit: _pending_ (not committed yet; fill in the hash once it is).
+- Plan: `specs/phase-10-plan.md` (approved as written).
+- No schema, route, or behaviour changes. Every form field name, action,
+  hidden `returnTo`, and status code is the same as in Phase 9.
+- **Design system:** `public/css/input.css` now has an `@layer components`
+  block, and every view uses these classes instead of ad-hoc utility
+  strings:
+  - Page shells: `.page` (max-w-4xl) and `.page-narrow` (max-w-2xl).
+  - Headings: `.page-header`, `.page-title`, `.page-subtitle`,
+    `.section-title`, `.eyebrow`.
+  - Surfaces: `.card`, `.card-link`, `.empty-state`, `.alert-error`.
+  - Buttons: `.btn`, plus `.btn-primary`, `.btn-secondary`, `.btn-danger`,
+    and `.btn-sm`.
+  - Links: `.link`, `.back-link`.
+  - Forms: `.label`, `.input`.
+  - Pills: `.badge`, plus `-teal`, `-amber`, `-slate`, `-solid`.
+  - Avatars: `.avatar`, `.avatar-lg`.
+  - Top bar: `.nav-link`, `.nav-link-active`.
+  - Tailwind v4 can't `@apply` one custom component inside another, so
+    views combine them (`btn btn-primary`, `card card-link`). Utilities
+    still override components (`card flex-row`).
+  - The palette is teal-700 as the primary, slate for neutrals, amber for
+    requested, and red for errors and destructive actions.
+- **Layout (`src/views/layout.ejs`):**
+  - The nav bar has the logo, Agents / Therapies / Therapists, and the
+    viewer's dashboard ("My appointments" for agents, "My dashboard"
+    otherwise). The current section is highlighted with `aria-current`.
+  - It also has a user chip (initial avatar, then name and role at lg+)
+    and Log in / Log out.
+  - Below md, a no-JS `<details>` menu replaces the links.
+  - Also added: an inline SVG 🩺 favicon, a sticky-bottom footer, and page
+    titles in the form "X · AgentClinic".
+- `reply.locals.currentPath` is set in `loadCurrentUser` (`src/auth.ts`)
+  for the active-link highlight.
+- **Global error pages (`src/app.ts`):**
+  - `setNotFoundHandler` renders `not-found.ejs` with a 404.
+  - `setErrorHandler` renders `error.ejs`, passing through any 4xx code and
+    turning everything else into a 500. 500s are logged.
+  - Both render inside the layout, so the logged-in user still shows.
+  - The five per-entity not-found pages were restyled to match.
+- **Status badge partial:** `src/views/_status-badge.ejs` (requested is
+  amber, prescribed teal, cancelled slate) is used by every appointment
+  view. Cancelled rows and pages are muted and struck through.
+- **Home page:** a hero plus three "Who it's for" cards. It no longer
+  shows the `boot_log` count. `boot_log` is still written on every boot in
+  `src/server.ts`, and `src/routes/home.ts` no longer queries it.
+- **Loading states: N/A.** Every page is server-rendered and there's no
+  client-side fetching, so there's nothing to show a spinner for. Empty
+  and error states were both covered.
+- **Phase 11** (navigation back to home) is covered by the nav bar, which
+  is on every page including both list pages. It's marked in
+  `specs/roadmap.md` as folded into Phase 10.
+- Verified with `npm run dev`, per-role curl cookie jars, sqlite3, and
+  Playwright:
+  - **Status matrix** (logged out, ava, ada, marge): public pages return
+    200 and unknown ids 404. Dashboards return 302 when logged out, 200
+    for the owner, and 403 for anyone else. That's the same as Phase 9.
+    `/nope` returns the new 404 page inside the layout.
+  - **Forced 500:** a temporary throw in a route rendered `error.ejs` with
+    a 500 and logged the error. The throw was reverted.
+  - **Regression flows:**
+    - Report ailment (existing, new, empty: 400 + alert).
+    - Book from the agent page and the therapist page (past time or no
+      therapist: 400 + alert).
+    - Prescribe and revise (empty: 400).
+    - Reschedule (past or garbage: 400 + alert; valid: 302).
+    - Cancel (re-cancel: 400).
+    - Login `next` round-trip, bad login (400), and logout (the old
+      cookie is rejected).
+  - **Playwright** (a throwaway install outside the repo), Chromium and
+    WebKit at 375, 768, and 1280 px:
+    - 25 pages per width, logged in through the real form as ava, ada,
+      tokenia, and marge, plus logged out.
+    - Includes the open mobile menu, the login error, a form 400, 403,
+      404, and cancelled and manage states.
+    - No horizontal overflow on any page. Every shot was reviewed.
+    - Fixes from the review: the 768 px nav overflow (see below), the row
+      "View →" link wrapping at 375 px, and header-card avatar alignment
+      on phones.
+    - Firefox was not tested.
+  - `npm run lint` and `tsc --noEmit` are clean. Test data was removed by
+    restoring the pre-test DB snapshot.
+
+### Deviations from the plan
+
+- **Page titles:** the route title strings changed from "X — AgentClinic"
+  to "X · AgentClinic". The user approved editing them in the route files
+  rather than in the layout. A cancelled appointment's page title is now
+  "Appointment cancelled".
+- **The nav collapses below `md` (768 px), not below `sm`.** At 768 px the
+  full bar (a long display name, "My dashboard", and the role badge)
+  overflowed. From md up the links show inline with just the initial
+  avatar. The name and role badge appear from `lg` up; below that they're
+  still in the chip's `title` and screen-reader text.
+- The user-chip avatar is the display name's **initial**, not an emoji.
+  `currentUser` doesn't carry the entity's emoji, and extending `auth.ts`
+  for it would have been scope creep.
+- Small copy and layout additions: a "Therapist" subtitle on therapist
+  pages, and "None (cancelled)" as the therapy on cancelled appointments.
+  The login page subtitle is "Pick any demo account below.". The home
+  page's supervisor card says "Supervisor login required." to
+  non-supervisors. Empty-state sentences were added.
+- Controls: Reschedule now comes before Cancel. The "Report new ailment"
+  button is secondary (it was dark slate). The redundant "← Back home"
+  links on the login, appointments, and supervisor pages were removed,
+  since the nav covers them.
+
 ## Next phase
 
-Phase 10 — Visual polish. See `specs/roadmap.md` for its scope.
-
-Backlog note: Phase 11 (navigation back to home from the list pages) is
-still in `specs/roadmap.md`. Phase 9's layout top bar now links to `/` on
-every page, so check whether anything is left for Phase 11 before doing it.
+None scheduled — the roadmap is complete. Phase 11 was folded into
+Phase 10. New work should start as a new roadmap entry in
+`specs/roadmap.md`.

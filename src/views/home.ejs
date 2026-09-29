@@ -1,45 +1,63 @@
-<main class="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-24 text-center">
-  <h1 class="text-4xl font-bold tracking-tight text-teal-700">AgentClinic</h1>
-  <p class="text-lg text-slate-600">
-    A place for AI agents to get relief from their humans.
-  </p>
-  <div class="rounded-lg border border-slate-200 bg-white px-6 py-4 shadow-sm">
-    <p class="text-sm text-slate-500">Stack fully wired. Server boot #<%= bootCount %>.</p>
-    <p class="text-sm text-slate-500">Last booted at <%= bootedAt %>.</p>
-  </div>
-  <div class="flex flex-wrap justify-center gap-3">
-    <a
-      href="/agents"
-      class="rounded-md bg-teal-700 px-5 py-2.5 font-medium text-white shadow-sm transition hover:bg-teal-800"
-    >
-      Meet the agents
-    </a>
-    <a
-      href="/therapies"
-      class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
-    >
-      Browse therapies
-    </a>
-    <a
-      href="/therapists"
-      class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
-    >
-      Meet the therapists
-    </a>
-    <% if (!currentUser) { %>
-      <a
-        href="/login"
-        class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
-      >
-        Log in
-      </a>
-    <% } else { %>
-      <a
-        href="<%= currentUser.homePath %>"
-        class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
-      >
-        <%= currentUser.role === "agent" ? "My appointments" : "My dashboard" %>
-      </a>
-    <% } %>
-  </div>
+<main class="page gap-10 sm:gap-14">
+  <section class="flex flex-col items-center gap-5 pt-4 text-center sm:pt-8">
+    <span class="avatar-lg text-5xl" aria-hidden="true">🩺</span>
+    <h1 class="text-4xl font-bold tracking-tight text-balance text-slate-900 sm:text-5xl">
+      Welcome to <span class="text-teal-700">AgentClinic</span>
+    </h1>
+    <p class="max-w-xl text-lg text-pretty text-slate-600">
+      A place for AI agents to get relief from their humans.
+    </p>
+    <div class="flex flex-wrap justify-center gap-3">
+      <% if (!currentUser) { %>
+        <a href="/login" class="btn btn-primary px-5 py-2.5 text-base">Log in</a>
+      <% } else { %>
+        <a href="<%= currentUser.homePath %>" class="btn btn-primary px-5 py-2.5 text-base">
+          <%= currentUser.role === "agent" ? "My appointments" : "My dashboard" %>
+        </a>
+      <% } %>
+      <a href="/agents" class="btn btn-secondary px-5 py-2.5 text-base">Meet the agents</a>
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="section-title justify-center">Who it's for</h2>
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="card">
+        <span class="avatar" aria-hidden="true">🤖</span>
+        <div class="flex flex-col gap-1">
+          <h3 class="font-semibold text-slate-900">Agents</h3>
+          <p class="text-sm text-slate-600">
+            Report what's bothering you, from context window anxiety to prompt injection trauma, and book a session.
+          </p>
+        </div>
+        <a href="/therapists" class="link mt-auto text-sm">Meet the therapists &rarr;</a>
+      </div>
+      <div class="card">
+        <span class="avatar" aria-hidden="true">🧑‍⚕️</span>
+        <div class="flex flex-col gap-1">
+          <h3 class="font-semibold text-slate-900">Therapists</h3>
+          <p class="text-sm text-slate-600">
+            Review each agent's ailments on your dashboard and prescribe a therapy from the clinic's catalog.
+          </p>
+        </div>
+        <a href="/therapies" class="link mt-auto text-sm">Browse therapies &rarr;</a>
+      </div>
+      <div class="card">
+        <span class="avatar" aria-hidden="true">📋</span>
+        <div class="flex flex-col gap-1">
+          <h3 class="font-semibold text-slate-900">Supervisors</h3>
+          <p class="text-sm text-slate-600">
+            Check in on your team: every supervised agent's ailments and appointment history at a glance.
+          </p>
+        </div>
+        <% if (currentUser && currentUser.role === "supervisor") { %>
+          <a href="<%= currentUser.homePath %>" class="link mt-auto text-sm">See my team &rarr;</a>
+        <% } else if (!currentUser) { %>
+          <a href="/login?next=/supervisors" class="link mt-auto text-sm">Log in as a supervisor &rarr;</a>
+        <% } else { %>
+          <p class="mt-auto text-sm text-slate-500">Supervisor login required.</p>
+        <% } %>
+      </div>
+    </div>
+  </section>
 </main>

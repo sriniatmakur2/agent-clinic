@@ -57,5 +57,18 @@ export function buildApp(): FastifyInstance {
   app.register(appointmentRoutes);
   app.register(supervisorRoutes);
 
+  // Unknown URLs and unhandled errors render inside the normal layout, not as JSON.
+  app.setNotFoundHandler((_request, reply) => {
+    return reply.code(404).view("not-found.ejs", { title: "Page not found · AgentClinic" });
+  });
+
+  app.setErrorHandler((error: { statusCode?: number }, request, reply) => {
+    const code = error.statusCode && error.statusCode >= 400 && error.statusCode < 500 ? error.statusCode : 500;
+    if (code === 500) {
+      request.log.error(error);
+    }
+    return reply.code(code).view("error.ejs", { title: "Something went wrong · AgentClinic", code });
+  });
+
   return app;
 }

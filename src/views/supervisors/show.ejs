@@ -1,52 +1,43 @@
-<main class="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-16">
-  <a href="/" class="text-sm text-teal-700 hover:underline">&larr; Back home</a>
-
-  <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-teal-50 text-3xl">
-      <%= supervisor.avatarEmoji %>
-    </span>
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-slate-900"><%= supervisor.name %>'s team</h1>
-      <p class="text-sm text-slate-600"><%= supervisor.bio %></p>
+<main class="page gap-8">
+  <div class="card flex-row items-start sm:items-center">
+    <span class="avatar"><%= supervisor.avatarEmoji %></span>
+    <div class="flex min-w-0 flex-col gap-1">
+      <h1 class="page-title"><%= supervisor.name %>'s team</h1>
+      <p class="text-sm text-pretty text-slate-600"><%= supervisor.bio %></p>
     </div>
   </div>
 
   <% if (agentSections.length === 0) { %>
-    <p class="text-sm text-slate-500">No agents are assigned to this supervisor yet.</p>
+    <p class="empty-state">No agents are assigned to this supervisor yet.</p>
   <% } else { %>
     <% agentSections.forEach((section) => { %>
-      <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+      <section class="card gap-5">
         <div class="flex items-center gap-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xl">
-            <%= section.agent.avatarEmoji %>
-          </span>
-          <a
-            href="/agents/<%= section.agent.id %>"
-            class="text-lg font-semibold text-slate-900 hover:text-teal-700 hover:underline"
-          >
-            <%= section.agent.name %>
-          </a>
+          <span class="avatar h-10 w-10 text-xl"><%= section.agent.avatarEmoji %></span>
+          <h2 class="section-title">
+            <a href="/agents/<%= section.agent.id %>" class="hover:text-teal-700 hover:underline"><%= section.agent.name %></a>
+          </h2>
         </div>
 
-        <div>
+        <div class="flex flex-col gap-2">
           <h3 class="text-sm font-semibold text-slate-700">Reported ailments</h3>
           <% if (section.ailments.length === 0) { %>
             <p class="text-sm text-slate-500">No ailments reported.</p>
           <% } else { %>
-            <div class="mt-1.5 flex flex-wrap gap-1.5">
+            <div class="flex flex-wrap gap-1.5">
               <% section.ailments.forEach((ailment) => { %>
-                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                  <%= ailment.name %>
-                </span>
+                <span class="badge badge-slate"><%= ailment.name %></span>
               <% }) %>
             </div>
           <% } %>
         </div>
 
         <div class="flex flex-col gap-3">
-          <h3 class="text-sm font-semibold text-slate-700">Upcoming appointments</h3>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            Upcoming appointments <span class="badge badge-slate"><%= section.upcoming.length %></span>
+          </h3>
           <% if (section.upcoming.length === 0) { %>
-            <p class="text-sm text-slate-500">No upcoming appointments.</p>
+            <p class="empty-state py-4">No upcoming appointments.</p>
           <% } else { %>
             <ul class="flex flex-col gap-3">
               <% section.upcoming.forEach((appointment) => { %>
@@ -57,9 +48,11 @@
         </div>
 
         <div class="flex flex-col gap-3">
-          <h3 class="text-sm font-semibold text-slate-700">Past appointments</h3>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            Past appointments <span class="badge badge-slate"><%= section.past.length %></span>
+          </h3>
           <% if (section.past.length === 0) { %>
-            <p class="text-sm text-slate-500">No past appointments.</p>
+            <p class="empty-state py-4">No past appointments.</p>
           <% } else { %>
             <ul class="flex flex-col gap-3">
               <% section.past.forEach((appointment) => { %>

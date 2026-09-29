@@ -100,6 +100,8 @@ export async function loadCurrentUser(request: FastifyRequest, reply: FastifyRep
       }
     : null;
   reply.locals.currentUser = request.currentUser;
+  // Path only (no query), so the nav bar can highlight the current section.
+  reply.locals.currentPath = request.url.split("?")[0];
 }
 
 // A same-site path to redirect to: must start with a single "/" (so not
@@ -122,7 +124,7 @@ export function requireLogin(request: FastifyRequest, reply: FastifyReply): Curr
 
 export function forbid(reply: FastifyReply) {
   return reply.code(403).view("forbidden.ejs", {
-    title: "Not allowed — AgentClinic",
+    title: "Not allowed · AgentClinic",
   });
 }
 

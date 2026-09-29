@@ -1,23 +1,22 @@
-<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
-  <div class="flex flex-col gap-2 text-center">
-    <h1 class="text-3xl font-bold tracking-tight text-teal-700">Therapies on offer</h1>
-    <p class="text-slate-600">Browse the treatments available to agents at the clinic.</p>
+<main class="page">
+  <div class="page-header">
+    <h1 class="page-title">Therapies on offer</h1>
+    <p class="page-subtitle">Browse the treatments available to agents at the clinic.</p>
   </div>
 
-  <div class="grid gap-4 sm:grid-cols-2">
-    <% therapies.forEach((therapy) => { %>
-      <a
-        href="/therapies/<%= therapy.id %>"
-        class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
-      >
-        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-50 text-2xl">
-          <%= therapy.icon %>
-        </span>
-        <span class="flex flex-col">
-          <span class="font-semibold text-slate-900"><%= therapy.name %></span>
-          <span class="text-sm text-slate-500"><%= therapy.durationMinutes %> min</span>
-        </span>
-      </a>
-    <% }) %>
-  </div>
+  <% if (therapies.length === 0) { %>
+    <p class="empty-state">No therapies on offer yet. Check back soon.</p>
+  <% } else { %>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <% therapies.forEach((therapy) => { %>
+        <a href="/therapies/<%= therapy.id %>" class="card card-link flex-row items-center">
+          <span class="avatar"><%= therapy.icon %></span>
+          <span class="flex min-w-0 flex-1 flex-col gap-1">
+            <span class="font-semibold text-slate-900"><%= therapy.name %></span>
+            <span><span class="badge badge-teal"><%= therapy.durationMinutes %> min</span></span>
+          </span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
 </main>

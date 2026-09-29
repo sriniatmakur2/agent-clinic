@@ -1,146 +1,124 @@
-<main class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-16">
-  <a href="/agents" class="text-sm text-teal-700 hover:underline">&larr; Back to agents</a>
+<main class="page-narrow">
+  <a href="/agents" class="back-link">&larr; Back to agents</a>
 
-  <div class="flex flex-col items-center gap-4 rounded-lg border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
-    <span class="flex h-20 w-20 items-center justify-center rounded-full bg-teal-50 text-4xl">
-      <%= agent.avatarEmoji %>
-    </span>
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-slate-900"><%= agent.name %></h1>
+  <div class="card items-center py-8 text-center sm:py-10">
+    <span class="avatar-lg"><%= agent.avatarEmoji %></span>
+    <div class="flex flex-col gap-1">
+      <h1 class="page-title"><%= agent.name %></h1>
       <p class="text-sm font-medium text-teal-700"><%= agent.role %></p>
     </div>
-    <p class="max-w-md text-slate-600"><%= agent.bio %></p>
+    <p class="max-w-md text-pretty text-slate-600"><%= agent.bio %></p>
     <% if (isSelf) { %>
-      <a
-        href="/appointments"
-        class="rounded-md border border-teal-600 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
-      >
-        View appointments
-      </a>
+      <a href="/appointments" class="btn btn-secondary">View appointments</a>
     <% } %>
   </div>
 
-  <div class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h2 class="text-lg font-semibold text-slate-900">Ailments</h2>
+  <section class="card">
+    <h2 class="section-title">
+      Ailments
+      <% if (agentAilments.length > 0) { %><span class="badge badge-slate"><%= agentAilments.length %></span><% } %>
+    </h2>
 
     <% if (agentAilments.length === 0) { %>
-      <p class="text-sm text-slate-500">No ailments reported yet.</p>
+      <p class="empty-state">No ailments reported yet. Feeling fine, apparently.</p>
     <% } else { %>
       <ul class="flex flex-col gap-3">
         <% agentAilments.forEach((ailment) => { %>
-          <li class="rounded-md border border-teal-100 bg-teal-50/50 px-4 py-3">
-            <p class="font-medium text-teal-800"><%= ailment.name %></p>
+          <li class="rounded-lg border border-teal-100 bg-teal-50/60 px-4 py-3">
+            <p class="font-medium text-teal-900"><%= ailment.name %></p>
             <p class="text-sm text-slate-600"><%= ailment.description %></p>
           </li>
         <% }) %>
       </ul>
     <% } %>
-  </div>
+  </section>
 
   <% if (isSelf) { %>
-  <div class="flex flex-col gap-6 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h2 class="text-lg font-semibold text-slate-900">Report an ailment</h2>
+  <section class="card gap-6">
+    <h2 class="section-title">Report an ailment</h2>
 
     <% if (typeof error !== "undefined" && error) { %>
-      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= error %></p>
+      <p class="alert-error" role="alert"><%= error %></p>
     <% } %>
 
-    <form method="POST" action="/agents/<%= agent.id %>/ailments" class="flex flex-col gap-3">
-      <label class="text-sm font-medium text-slate-700" for="ailmentId">I have this too</label>
-      <div class="flex gap-2">
-        <select
-          id="ailmentId"
-          name="ailmentId"
-          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
-        >
+    <form method="POST" action="/agents/<%= agent.id %>/ailments" class="flex flex-col gap-1.5">
+      <label class="label" for="ailmentId">I have this too</label>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <select id="ailmentId" name="ailmentId" class="input">
           <option value="">Select an ailment&hellip;</option>
           <% allAilments.forEach((ailment) => { %>
             <option value="<%= ailment.id %>"><%= ailment.name %></option>
           <% }) %>
         </select>
-        <button
-          type="submit"
-          class="shrink-0 rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-        >
-          Report
-        </button>
+        <button type="submit" class="btn btn-primary self-start sm:self-auto">Report</button>
       </div>
     </form>
 
-    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400">
+    <div class="flex items-center gap-2 text-xs tracking-wide text-slate-400 uppercase">
       <span class="h-px flex-1 bg-slate-200"></span>
       or
       <span class="h-px flex-1 bg-slate-200"></span>
     </div>
 
     <form method="POST" action="/agents/<%= agent.id %>/ailments" class="flex flex-col gap-3">
-      <label class="text-sm font-medium text-slate-700" for="newAilmentName">Something new</label>
+      <label class="label -mb-1.5" for="newAilmentName">Something new</label>
       <input
         id="newAilmentName"
         name="newAilmentName"
         type="text"
         placeholder="Ailment name"
-        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        class="input"
       />
       <textarea
         id="newAilmentDescription"
         name="newAilmentDescription"
         placeholder="Describe what's going on"
+        aria-label="Ailment description"
         rows="2"
-        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        class="input"
       ></textarea>
-      <button
-        type="submit"
-        class="self-start rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900"
-      >
-        Report new ailment
-      </button>
+      <button type="submit" class="btn btn-secondary self-start">Report new ailment</button>
     </form>
-  </div>
+  </section>
 
-  <div class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h2 class="text-lg font-semibold text-slate-900">Book an appointment</h2>
+  <section class="card">
+    <h2 class="section-title">Book an appointment</h2>
 
     <% if (bookingError) { %>
-      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= bookingError %></p>
+      <p class="alert-error" role="alert"><%= bookingError %></p>
     <% } %>
 
     <% if (agentAilments.length === 0) { %>
-      <p class="text-sm text-slate-500">Report an ailment first, so a therapist knows what you need help with.</p>
+      <p class="empty-state">Report an ailment first, so a therapist knows what you need help with.</p>
     <% } else { %>
 
-      <form method="POST" action="/agents/<%= agent.id %>/appointments" class="flex flex-col gap-3">
-        <label class="text-sm font-medium text-slate-700" for="therapistId">Therapist</label>
-        <select
-          id="therapistId"
-          name="therapistId"
-          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
-        >
-          <option value="">Select a therapist&hellip;</option>
-          <% bookableTherapists.forEach((therapist) => { %>
-            <option value="<%= therapist.id %>" <%= String(therapist.id) === bookingForm.therapistId ? "selected" : "" %>>
-              <%= therapist.avatarEmoji %> <%= therapist.name %><%= therapist.matchesAilments ? " — specializes in your ailments" : "" %>
-            </option>
-          <% }) %>
-        </select>
+      <form method="POST" action="/agents/<%= agent.id %>/appointments" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="label" for="therapistId">Therapist</label>
+          <select id="therapistId" name="therapistId" class="input">
+            <option value="">Select a therapist&hellip;</option>
+            <% bookableTherapists.forEach((therapist) => { %>
+              <option value="<%= therapist.id %>" <%= String(therapist.id) === bookingForm.therapistId ? "selected" : "" %>>
+                <%= therapist.avatarEmoji %> <%= therapist.name %><%= therapist.matchesAilments ? " — specializes in your ailments" : "" %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
 
-        <label class="text-sm font-medium text-slate-700" for="requestedAt">Requested time</label>
-        <input
-          id="requestedAt"
-          name="requestedAt"
-          type="datetime-local"
-          value="<%= bookingForm.requestedAt ?? "" %>"
-          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-        />
+        <div class="flex flex-col gap-1.5">
+          <label class="label" for="requestedAt">Requested time</label>
+          <input
+            id="requestedAt"
+            name="requestedAt"
+            type="datetime-local"
+            value="<%= bookingForm.requestedAt ?? "" %>"
+            class="input"
+          />
+        </div>
 
-        <button
-          type="submit"
-          class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-        >
-          Book appointment
-        </button>
+        <button type="submit" class="btn btn-primary self-start">Book appointment</button>
       </form>
     <% } %>
-  </div>
+  </section>
   <% } %>
 </main>

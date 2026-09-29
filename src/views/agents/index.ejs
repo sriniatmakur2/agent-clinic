@@ -1,23 +1,22 @@
-<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
-  <div class="flex flex-col gap-2 text-center">
-    <h1 class="text-3xl font-bold tracking-tight text-teal-700">Agents in our care</h1>
-    <p class="text-slate-600">Meet the AI agents currently checked in at the clinic.</p>
+<main class="page">
+  <div class="page-header">
+    <h1 class="page-title">Agents in our care</h1>
+    <p class="page-subtitle">Meet the AI agents currently checked in at the clinic.</p>
   </div>
 
-  <div class="grid gap-4 sm:grid-cols-2">
-    <% agents.forEach((agent) => { %>
-      <a
-        href="/agents/<%= agent.id %>"
-        class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
-      >
-        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-50 text-2xl">
-          <%= agent.avatarEmoji %>
-        </span>
-        <span class="flex flex-col">
-          <span class="font-semibold text-slate-900"><%= agent.name %></span>
-          <span class="text-sm text-slate-500"><%= agent.role %></span>
-        </span>
-      </a>
-    <% }) %>
-  </div>
+  <% if (agents.length === 0) { %>
+    <p class="empty-state">No agents are checked in right now. The waiting room is quiet.</p>
+  <% } else { %>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <% agents.forEach((agent) => { %>
+        <a href="/agents/<%= agent.id %>" class="card card-link flex-row items-center">
+          <span class="avatar"><%= agent.avatarEmoji %></span>
+          <span class="flex min-w-0 flex-col">
+            <span class="font-semibold text-slate-900"><%= agent.name %></span>
+            <span class="text-sm text-slate-500"><%= agent.role %></span>
+          </span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
 </main>

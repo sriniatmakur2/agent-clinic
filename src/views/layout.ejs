@@ -1,28 +1,94 @@
+<%
+  const user = typeof currentUser !== "undefined" ? currentUser : null;
+  const path = typeof currentPath !== "undefined" ? currentPath : "";
+  const dashboardLabel = user && user.role === "agent" ? "My appointments" : "My dashboard";
+  const onDashboard = Boolean(user) && (path === user.homePath || path.startsWith(user.homePath + "/"));
+  const navLinks = [
+    { href: "/agents", label: "Agents" },
+    { href: "/therapies", label: "Therapies" },
+    { href: "/therapists", label: "Therapists" },
+  ].map((link) => ({ ...link, active: !onDashboard && (path === link.href || path.startsWith(link.href + "/")) }));
+  if (user) {
+    navLinks.push({ href: user.homePath, label: dashboardLabel, active: onDashboard });
+  }
+%>
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= title %></title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>"
+    />
     <link rel="stylesheet" href="/public/css/output.css" />
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
-    <header class="border-b border-slate-200 bg-white">
-      <div class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-2 text-sm">
-        <a href="/" class="font-semibold text-teal-700 hover:underline">AgentClinic</a>
-        <% if (typeof currentUser !== "undefined" && currentUser) { %>
-          <div class="flex items-center gap-2 text-slate-600">
-            <span>Logged in as <%= currentUser.displayName %> (<%= currentUser.role %>)</span>
-            <span aria-hidden="true">&middot;</span>
+  <body class="flex min-h-screen flex-col bg-slate-50 text-slate-900 antialiased">
+    <header class="relative border-b border-slate-200 bg-white/95">
+      <div class="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-2.5">
+        <a href="/" class="flex items-center gap-2 rounded-md text-lg font-bold tracking-tight text-teal-800 focus-visible:outline-2 focus-visible:outline-teal-600">
+          <span aria-hidden="true">🩺</span> AgentClinic
+        </a>
+
+        <nav class="hidden flex-1 items-center gap-1 md:flex" aria-label="Main">
+          <% navLinks.forEach((link) => { %>
+            <a href="<%= link.href %>" class="nav-link <%= link.active ? "nav-link-active" : "" %>" <%- link.active ? 'aria-current="page"' : "" %>><%= link.label %></a>
+          <% }) %>
+        </nav>
+
+        <div class="hidden items-center gap-3 md:flex">
+          <% if (user) { %>
+            <span class="flex items-center gap-2 text-sm" title="<%= user.displayName %> (<%= user.role %>)">
+              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-teal-700 text-xs font-bold text-white" aria-hidden="true"><%= user.displayName.charAt(0) %></span>
+              <span class="sr-only lg:not-sr-only lg:font-medium lg:whitespace-nowrap lg:text-slate-800"><%= user.displayName %></span>
+              <span class="badge badge-slate hidden lg:inline-flex"><%= user.role %></span>
+            </span>
             <form method="POST" action="/logout">
-              <button type="submit" class="font-medium text-teal-700 hover:underline">Log out</button>
+              <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
             </form>
+          <% } else { %>
+            <a href="/login" class="btn btn-primary btn-sm">Log in</a>
+          <% } %>
+        </div>
+
+        <details class="group md:hidden">
+          <summary class="btn btn-secondary btn-sm list-none [&::-webkit-details-marker]:hidden">
+            <span class="group-open:hidden">Menu</span>
+            <span class="hidden group-open:inline">Close</span>
+          </summary>
+          <div class="absolute inset-x-0 top-full z-20 flex flex-col gap-1 border-b border-slate-200 bg-white px-4 pt-2 pb-4 shadow-lg">
+            <nav class="flex flex-col gap-1" aria-label="Main">
+              <% navLinks.forEach((link) => { %>
+                <a href="<%= link.href %>" class="nav-link <%= link.active ? "nav-link-active" : "" %>" <%- link.active ? 'aria-current="page"' : "" %>><%= link.label %></a>
+              <% }) %>
+            </nav>
+            <div class="mt-2 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <% if (user) { %>
+                <span class="flex min-w-0 items-center gap-2 text-sm">
+                  <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-bold text-white" aria-hidden="true"><%= user.displayName.charAt(0) %></span>
+                  <span class="truncate font-medium text-slate-800"><%= user.displayName %></span>
+                  <span class="badge badge-slate"><%= user.role %></span>
+                </span>
+                <form method="POST" action="/logout">
+                  <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
+                </form>
+              <% } else { %>
+                <span class="text-sm text-slate-500">Not logged in</span>
+                <a href="/login" class="btn btn-primary btn-sm">Log in</a>
+              <% } %>
+            </div>
           </div>
-        <% } else { %>
-          <a href="/login" class="font-medium text-teal-700 hover:underline">Log in</a>
-        <% } %>
+        </details>
       </div>
     </header>
-    <%- body %>
+
+    <div class="flex-1"><%- body %></div>
+
+    <footer class="border-t border-slate-200 bg-white">
+      <p class="mx-auto max-w-4xl px-4 py-5 text-center text-xs text-slate-500">
+        AgentClinic is a playful, fictional clinic for AI agents.
+      </p>
+    </footer>
   </body>
 </html>

@@ -8,7 +8,7 @@ export async function therapyRoutes(app: FastifyInstance): Promise<void> {
     const allTherapies = db.select().from(therapies).all();
 
     return reply.view("therapies/index.ejs", {
-      title: "Therapies — AgentClinic",
+      title: "Therapies · AgentClinic",
       therapies: allTherapies,
     });
   });
@@ -19,12 +19,12 @@ export async function therapyRoutes(app: FastifyInstance): Promise<void> {
 
     if (!therapy) {
       return reply.code(404).view("therapies/not-found.ejs", {
-        title: "Therapy not found — AgentClinic",
+        title: "Therapy not found · AgentClinic",
       });
     }
 
     return reply.view("therapies/show.ejs", {
-      title: `${therapy.name} — AgentClinic`,
+      title: `${therapy.name} · AgentClinic`,
       therapy,
     });
   });

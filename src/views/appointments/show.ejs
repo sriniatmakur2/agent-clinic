@@ -1,72 +1,69 @@
-<main class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-16">
-  <a href="<%= backLink.href %>" class="text-sm text-teal-700 hover:underline">&larr; <%= backLink.label %></a>
+<% const isCancelled = appointment.status === "cancelled"; %>
+<main class="page-narrow">
+  <a href="<%= backLink.href %>" class="back-link">&larr; <%= backLink.label %></a>
 
-  <div class="flex flex-col items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-6 py-8 text-center shadow-sm">
-    <span class="text-4xl"><%= isPrescribed ? appointment.therapy.icon : "✅" %></span>
-    <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-      <%= isPrescribed ? "Therapy prescribed" : "Appointment requested" %>
+  <div class="flex flex-col items-center gap-2 rounded-xl border px-6 py-8 text-center shadow-sm <%= isCancelled ? "border-slate-200 bg-slate-100" : "border-teal-200 bg-teal-50" %>">
+    <span class="text-4xl" aria-hidden="true"><%= isPrescribed ? appointment.therapy.icon : isCancelled ? "🚫" : "✅" %></span>
+    <h1 class="page-title">
+      <%= isCancelled ? "Appointment cancelled" : isPrescribed ? "Therapy prescribed" : "Appointment requested" %>
     </h1>
-    <p class="text-slate-600">
+    <p class="text-pretty text-slate-600">
       <% if (isPrescribed) { %>
         <%= appointment.therapist.name %> prescribed <%= appointment.therapy.name %> for <%= appointment.agent.name %>.
+      <% } else if (isCancelled) { %>
+        <%= appointment.agent.name %>'s session with <%= appointment.therapist.name %> was cancelled.
       <% } else { %>
         <%= appointment.agent.name %> is booked in with <%= appointment.therapist.name %>.
       <% } %>
     </p>
   </div>
 
-  <dl class="flex flex-col divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white px-6 shadow-sm">
-    <div class="flex items-center justify-between gap-4 py-4">
+  <dl class="flex flex-col divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white px-5 shadow-sm sm:px-6">
+    <div class="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <dt class="text-sm font-medium text-slate-500">Agent</dt>
       <dd>
-        <a href="/agents/<%= appointment.agent.id %>" class="font-medium text-teal-700 hover:underline">
+        <a href="/agents/<%= appointment.agent.id %>" class="link">
           <%= appointment.agent.avatarEmoji %> <%= appointment.agent.name %>
         </a>
       </dd>
     </div>
-    <div class="flex items-center justify-between gap-4 py-4">
-      <dt class="text-sm font-medium text-slate-500">Reported ailments</dt>
-      <dd class="flex flex-wrap justify-end gap-1.5">
+    <div class="flex flex-col gap-1.5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <dt class="shrink-0 text-sm font-medium text-slate-500">Reported ailments</dt>
+      <dd class="flex flex-wrap gap-1.5 sm:justify-end">
         <% if (agentAilments.length === 0) { %>
           <span class="text-sm text-slate-500">None reported</span>
         <% } else { %>
           <% agentAilments.forEach((ailment) => { %>
-            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"><%= ailment.name %></span>
+            <span class="badge badge-slate"><%= ailment.name %></span>
           <% }) %>
         <% } %>
       </dd>
     </div>
-    <div class="flex items-center justify-between gap-4 py-4">
+    <div class="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <dt class="text-sm font-medium text-slate-500">Therapist</dt>
       <dd>
-        <a href="/therapists/<%= appointment.therapist.id %>" class="font-medium text-teal-700 hover:underline">
+        <a href="/therapists/<%= appointment.therapist.id %>" class="link">
           <%= appointment.therapist.avatarEmoji %> <%= appointment.therapist.name %>
         </a>
       </dd>
     </div>
-    <div class="flex items-center justify-between gap-4 py-4">
+    <div class="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <dt class="text-sm font-medium text-slate-500">Requested time</dt>
-      <dd class="text-right text-slate-900"><%= requestedAtLabel %></dd>
+      <dd class="text-slate-900 sm:text-right <%= isCancelled ? "line-through" : "" %>"><%= requestedAtLabel %></dd>
     </div>
-    <div class="flex items-center justify-between gap-4 py-4">
+    <div class="flex flex-col items-start gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <dt class="text-sm font-medium text-slate-500">Status</dt>
-      <dd>
-        <% if (isPrescribed) { %>
-          <span class="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-700">prescribed</span>
-        <% } else { %>
-          <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
-            <%= appointment.status %>
-          </span>
-        <% } %>
-      </dd>
+      <dd><%- include("../_status-badge", { status: appointment.status }) %></dd>
     </div>
-    <div class="flex items-center justify-between gap-4 py-4">
+    <div class="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <dt class="text-sm font-medium text-slate-500">Therapy</dt>
-      <dd class="text-right">
+      <dd class="sm:text-right">
         <% if (appointment.therapy) { %>
-          <a href="/therapies/<%= appointment.therapy.id %>" class="font-medium text-teal-700 hover:underline">
+          <a href="/therapies/<%= appointment.therapy.id %>" class="link">
             <%= appointment.therapy.icon %> <%= appointment.therapy.name %>
           </a>
+        <% } else if (isCancelled) { %>
+          <span class="text-slate-500">None (cancelled)</span>
         <% } else { %>
           <span class="text-slate-500">To be prescribed by your therapist</span>
         <% } %>
@@ -75,90 +72,74 @@
     <% if (appointment.notes) { %>
       <div class="flex flex-col gap-2 py-4">
         <dt class="text-sm font-medium text-slate-500">Session notes</dt>
-        <dd class="whitespace-pre-line text-slate-900"><%= appointment.notes %></dd>
+        <dd class="rounded-lg bg-slate-50 px-4 py-3 whitespace-pre-line text-slate-900"><%= appointment.notes %></dd>
       </div>
     <% } %>
   </dl>
 
   <% if (showManage) { %>
-  <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h2 class="text-lg font-semibold text-slate-900">Manage your appointment</h2>
+  <section class="card">
+    <h2 class="section-title">Manage your appointment</h2>
 
     <% if (actionError) { %>
-      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= actionError %></p>
+      <p class="alert-error" role="alert"><%= actionError %></p>
     <% } %>
 
     <% if (canManage) { %>
-      <form method="POST" action="/appointments/<%= appointment.id %>/cancel">
+      <form method="POST" action="/appointments/<%= appointment.id %>/reschedule" class="flex flex-col gap-1.5">
         <input type="hidden" name="returnTo" value="/appointments/<%= appointment.id %>" />
-        <button
-          type="submit"
-          class="rounded-md border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
-        >
-          Cancel appointment
-        </button>
+        <label class="label" for="requestedAt">New time</label>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <input
+            id="requestedAt"
+            name="requestedAt"
+            type="datetime-local"
+            value="<%= rescheduleValue %>"
+            class="input"
+          />
+          <button type="submit" class="btn btn-primary self-start sm:self-auto">Reschedule</button>
+        </div>
       </form>
 
-      <form method="POST" action="/appointments/<%= appointment.id %>/reschedule" class="flex flex-col gap-3">
+      <form method="POST" action="/appointments/<%= appointment.id %>/cancel" class="border-t border-slate-100 pt-4">
         <input type="hidden" name="returnTo" value="/appointments/<%= appointment.id %>" />
-        <label class="text-sm font-medium text-slate-700" for="requestedAt">New time</label>
-        <input
-          id="requestedAt"
-          name="requestedAt"
-          type="datetime-local"
-          value="<%= rescheduleValue %>"
-          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-        />
-        <button
-          type="submit"
-          class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-        >
-          Reschedule
-        </button>
+        <button type="submit" class="btn btn-danger">Cancel appointment</button>
       </form>
     <% } else { %>
-      <p class="text-sm text-slate-500">This appointment can no longer be changed.</p>
+      <p class="empty-state">This appointment can no longer be changed.</p>
     <% } %>
   </section>
   <% } %>
 
   <% if (showPrescribe) { %>
-  <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
-    <h2 class="text-lg font-semibold text-slate-900">
+  <section class="card">
+    <h2 class="section-title">
       <%= isPrescribed ? "Revise the prescription" : "Prescribe a therapy" %>
     </h2>
 
     <% if (prescriptionError) { %>
-      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= prescriptionError %></p>
+      <p class="alert-error" role="alert"><%= prescriptionError %></p>
     <% } %>
 
-    <form method="POST" action="/appointments/<%= appointment.id %>/prescription" class="flex flex-col gap-3">
-      <label class="text-sm font-medium text-slate-700" for="therapyId">Therapy</label>
-      <select
-        id="therapyId"
-        name="therapyId"
-        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
-      >
-        <option value="">Select a therapy&hellip;</option>
-        <% allTherapies.forEach((therapy) => { %>
-          <option value="<%= therapy.id %>" <%= String(therapy.id) === prescriptionForm.therapyId ? "selected" : "" %>>
-            <%= therapy.icon %> <%= therapy.name %> (<%= therapy.durationMinutes %> min)
-          </option>
-        <% }) %>
-      </select>
+    <form method="POST" action="/appointments/<%= appointment.id %>/prescription" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="label" for="therapyId">Therapy</label>
+        <select id="therapyId" name="therapyId" class="input">
+          <option value="">Select a therapy&hellip;</option>
+          <% allTherapies.forEach((therapy) => { %>
+            <option value="<%= therapy.id %>" <%= String(therapy.id) === prescriptionForm.therapyId ? "selected" : "" %>>
+              <%= therapy.icon %> <%= therapy.name %> (<%= therapy.durationMinutes %> min)
+            </option>
+          <% }) %>
+        </select>
+      </div>
 
-      <label class="text-sm font-medium text-slate-700" for="notes">Session notes <span class="font-normal text-slate-500">(optional)</span></label>
-      <textarea
-        id="notes"
-        name="notes"
-        rows="4"
-        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-      ><%= prescriptionForm.notes ?? "" %></textarea>
+      <div class="flex flex-col gap-1.5">
+        <label class="label" for="notes">Session notes <span class="font-normal text-slate-500">(optional)</span></label>
+        <textarea id="notes" name="notes" rows="4" class="input"><%= prescriptionForm.notes ?? "" %></textarea>
+      </div>
 
-      <button
-        type="submit"
-        class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-      >
+      <button type="submit" class="btn btn-primary self-start">
         <%= isPrescribed ? "Update prescription" : "Prescribe therapy" %>
       </button>
     </form>

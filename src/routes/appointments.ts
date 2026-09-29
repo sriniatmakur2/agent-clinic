@@ -157,9 +157,15 @@ function renderAppointmentShow(
   } = {},
 ) {
   const isPrescribed = appointment.status === "prescribed";
+  const heading =
+    appointment.status === "cancelled"
+      ? "Appointment cancelled"
+      : isPrescribed
+        ? "Therapy prescribed"
+        : "Appointment requested";
 
   return reply.code(options.code ?? 200).view("appointments/show.ejs", {
-    title: `${isPrescribed ? "Therapy prescribed" : "Appointment requested"} — AgentClinic`,
+    title: `${heading} · AgentClinic`,
     appointment,
     isPrescribed,
     backLink: { href: viewer.homePath, label: BACK_LABELS[viewer.role] },
@@ -181,7 +187,7 @@ function renderAppointmentShow(
 
 function renderNotFound(reply: FastifyReply) {
   return reply.code(404).view("appointments/not-found.ejs", {
-    title: "Appointment not found — AgentClinic",
+    title: "Appointment not found · AgentClinic",
   });
 }
 
@@ -233,7 +239,7 @@ function renderAppointmentsIndex(
   const { upcoming, past } = buildAgentAppointmentRows(agent.id);
 
   return reply.code(options.code ?? 200).view("appointments/index.ejs", {
-    title: "My appointments — AgentClinic",
+    title: "My appointments · AgentClinic",
     agent,
     upcoming,
     past,

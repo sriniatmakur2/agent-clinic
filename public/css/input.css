@@ -1,3 +1,116 @@
 @import "tailwindcss";
 
 @source "../../src/views";
+
+/*
+ * Shared look for every page. Views combine these (e.g. "btn btn-primary",
+ * "card card-link") rather than repeating long utility strings.
+ */
+@layer components {
+  /* Page shells: wide for lists/dashboards, narrow for details/forms. */
+  .page {
+    @apply mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:py-14;
+  }
+  .page-narrow {
+    @apply mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:py-14;
+  }
+
+  /* Headings */
+  .page-header {
+    @apply flex flex-col gap-2;
+  }
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-balance text-slate-900 sm:text-3xl;
+  }
+  .page-subtitle {
+    @apply text-base text-pretty text-slate-600;
+  }
+  .section-title {
+    @apply flex items-center gap-2 text-lg font-semibold text-slate-900;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold tracking-wider text-teal-700 uppercase;
+  }
+
+  /* Surfaces */
+  .card {
+    @apply flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6;
+  }
+  .card-link {
+    @apply transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 active:translate-y-px;
+  }
+  .btn-primary {
+    @apply bg-teal-700 text-white hover:bg-teal-800;
+  }
+  .btn-secondary {
+    @apply border border-teal-700 bg-white text-teal-700 hover:bg-teal-50;
+  }
+  .btn-danger {
+    @apply border border-red-300 bg-white text-red-700 hover:bg-red-50 focus-visible:outline-red-600;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5;
+  }
+
+  /* Links */
+  .link {
+    @apply font-medium text-teal-700 underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600;
+  }
+  .back-link {
+    @apply self-start text-sm font-medium text-teal-700 underline-offset-2 hover:underline;
+  }
+
+  /* Forms */
+  .label {
+    @apply text-sm font-medium text-slate-700;
+  }
+  .input {
+    @apply w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs placeholder:text-slate-400 focus-visible:border-teal-600 focus-visible:ring-2 focus-visible:ring-teal-600/30 focus-visible:outline-none;
+  }
+
+  /* Feedback */
+  .alert-error {
+    @apply rounded-lg border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800;
+  }
+  .empty-state {
+    @apply rounded-xl border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-center text-sm text-slate-500;
+  }
+
+  /* Pills */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-teal {
+    @apply bg-teal-50 text-teal-800 ring-1 ring-teal-200 ring-inset;
+  }
+  .badge-amber {
+    @apply bg-amber-50 text-amber-800 ring-1 ring-amber-200 ring-inset;
+  }
+  .badge-slate {
+    @apply bg-slate-100 text-slate-700 ring-1 ring-slate-200 ring-inset;
+  }
+  .badge-solid {
+    @apply bg-teal-700 text-white;
+  }
+
+  /* Emoji avatars */
+  .avatar {
+    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-50 text-2xl ring-1 ring-teal-100;
+  }
+  .avatar-lg {
+    @apply flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-teal-50 text-4xl ring-1 ring-teal-100;
+  }
+
+  /* Top bar */
+  .nav-link {
+    @apply rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-teal-600;
+  }
+  .nav-link-active {
+    @apply bg-teal-50 text-teal-800 hover:bg-teal-50 hover:text-teal-800;
+  }
+}
