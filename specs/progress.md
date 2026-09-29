@@ -193,7 +193,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 5 — Book an appointment: DONE
 
-- Commit: _not yet committed_ (fill in the hash once committed).
+- Commit: `f3b4026` ("Phase 5: book an appointment") on `main`.
 - Decisions made with the user before implementation:
   - Booking form on **both** the agent and therapist detail pages.
   - An agent must have reported at least one ailment to book (the form
