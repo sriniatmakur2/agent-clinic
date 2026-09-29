@@ -1,0 +1,69 @@
+<li
+  class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm <%= appointment.status === "cancelled" ? "opacity-60" : "" %>"
+>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <a
+        href="/therapists/<%= appointment.therapist.id %>"
+        class="font-semibold text-slate-900 hover:text-teal-700 hover:underline <%= appointment.status === "cancelled" ? "line-through" : "" %>"
+      >
+        <%= appointment.therapist.avatarEmoji %> <%= appointment.therapist.name %>
+      </a>
+      <% if (appointment.status === "prescribed") { %>
+        <span class="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-teal-700">prescribed</span>
+      <% } else if (appointment.status === "cancelled") { %>
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-500">cancelled</span>
+      <% } else { %>
+        <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700"><%= appointment.status %></span>
+      <% } %>
+    </div>
+    <a href="/appointments/<%= appointment.id %>" class="text-sm font-semibold text-teal-700 hover:underline">View</a>
+  </div>
+
+  <p class="text-sm text-slate-600 <%= appointment.status === "cancelled" ? "line-through" : "" %>">
+    <%= appointment.requestedAtLabel %>
+  </p>
+
+  <p class="text-sm">
+    <% if (appointment.therapy) { %>
+      <span class="text-slate-500">Prescribed:</span>
+      <span class="font-medium text-slate-900"><%= appointment.therapy.icon %> <%= appointment.therapy.name %></span>
+    <% } else { %>
+      <span class="text-slate-500">Not yet prescribed</span>
+    <% } %>
+  </p>
+
+  <% if (rowError && rowError.appointmentId === appointment.id) { %>
+    <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= rowError.message %></p>
+  <% } %>
+
+  <% if (appointment.canManage) { %>
+    <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+      <form method="POST" action="/appointments/<%= appointment.id %>/cancel">
+        <input type="hidden" name="returnTo" value="/appointments?agentId=<%= agent.id %>" />
+        <button
+          type="submit"
+          class="rounded-md border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+        >
+          Cancel
+        </button>
+      </form>
+
+      <form method="POST" action="/appointments/<%= appointment.id %>/reschedule" class="flex items-center gap-2">
+        <input type="hidden" name="returnTo" value="/appointments?agentId=<%= agent.id %>" />
+        <input
+          type="datetime-local"
+          name="requestedAt"
+          value="<%= (rescheduleForm && rescheduleForm.appointmentId === appointment.id) ? (rescheduleForm.requestedAt ?? "") : appointment.rescheduleValue %>"
+          class="rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
+        />
+        <button
+          type="submit"
+          class="rounded-md border border-teal-600 px-3 py-1.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+        >
+          Reschedule
+        </button>
+      </form>
+    </div>
+  <% } %>
+</li>

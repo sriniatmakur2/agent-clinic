@@ -10,6 +10,12 @@
       <p class="text-sm font-medium text-teal-700"><%= agent.role %></p>
     </div>
     <p class="max-w-md text-slate-600"><%= agent.bio %></p>
+    <a
+      href="/appointments?agentId=<%= agent.id %>"
+      class="rounded-md border border-teal-600 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+    >
+      View appointments
+    </a>
   </div>
 
   <div class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">

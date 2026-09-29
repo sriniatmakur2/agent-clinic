@@ -83,6 +83,46 @@
   </dl>
 
   <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">Manage your appointment</h2>
+
+    <% if (actionError) { %>
+      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= actionError %></p>
+    <% } %>
+
+    <% if (canManage) { %>
+      <form method="POST" action="/appointments/<%= appointment.id %>/cancel">
+        <input type="hidden" name="returnTo" value="/appointments/<%= appointment.id %>" />
+        <button
+          type="submit"
+          class="rounded-md border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+        >
+          Cancel appointment
+        </button>
+      </form>
+
+      <form method="POST" action="/appointments/<%= appointment.id %>/reschedule" class="flex flex-col gap-3">
+        <input type="hidden" name="returnTo" value="/appointments/<%= appointment.id %>" />
+        <label class="text-sm font-medium text-slate-700" for="requestedAt">New time</label>
+        <input
+          id="requestedAt"
+          name="requestedAt"
+          type="datetime-local"
+          value="<%= rescheduleValue %>"
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        />
+        <button
+          type="submit"
+          class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+        >
+          Reschedule
+        </button>
+      </form>
+    <% } else { %>
+      <p class="text-sm text-slate-500">This appointment can no longer be changed.</p>
+    <% } %>
+  </section>
+
+  <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
     <h2 class="text-lg font-semibold text-slate-900">
       <%= isPrescribed ? "Revise the prescription" : "Prescribe a therapy" %>
     </h2>

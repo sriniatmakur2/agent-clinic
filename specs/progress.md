@@ -298,11 +298,66 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 - `prettier --check src` still flags the same long-line style noted in
   Phase 3; not reformatted, to keep the diff scoped.
 
+## Phase 7 — View & manage bookings: DONE
+
+- Implemented from `specs/phase-7-plan.md`; decisions there were made with
+  the user (simple agent picker mirroring the Phase 6 therapist dashboard,
+  eligibility = `status === "requested"` and `requestedAt` still future,
+  controls on both the list and the appointment page, cancelled rows kept
+  and de-emphasized rather than hidden).
+- No schema/migration change — `status` is already free-text;
+  `"cancelled"` is just a new value alongside `"requested"`/`"prescribed"`.
+  Reschedule updates `requestedAt` in place on the existing row.
+- `src/routes/appointments.ts` gains: `canCancelOrReschedule()` (shared
+  eligibility check — status `"requested"` and `requestedAt` in the
+  future), `toDatetimeLocalValue()` (pre-fills the reschedule
+  `datetime-local` input from a stored ISO string), `buildAgentAppointmentRows()`
+  + `renderAppointmentsIndex()` (agent picker + upcoming/past list, same
+  ordering convention as the therapist dashboard), and `renderActionError()`
+  (re-renders whichever page — appointment or list — a cancel/reschedule
+  POST was submitted from, based on a hidden `returnTo` field, with a 400
+  and inline error).
+- New routes: `GET /appointments` (bare picker, or a given agent's list via
+  `?agentId=`), `POST /appointments/:id/cancel`, `POST
+  /appointments/:id/reschedule` (same future-time validation as
+  `createAppointment`). Both POSTs 404 for an unknown id via the existing
+  `renderNotFound`.
+- Views: `src/views/appointments/index.ejs` (new, agent picker + list) and
+  `src/views/appointments/_row.ejs` (new partial for the agent's-eye
+  row — separate from `therapists/_appointment-row.ejs` since the two
+  views show different columns, as anticipated in the plan).
+  `appointments/show.ejs` gained a "Manage your appointment" section
+  (cancel + reschedule forms when eligible, an explanatory note
+  otherwise). Cancelled rows are shown greyed out + struck through, not
+  hidden. Home page got a "My appointments" link; `agents/show.ejs` got a
+  "View appointments" link to `/appointments?agentId=<id>` (mirroring the
+  therapist page's own link to its dashboard).
+- Verified with `npm run dev` + `curl` + `sqlite3` against the seeded data
+  (5 appointments from Phase 6's seed): bare picker and a populated list
+  both 200; cancel/reschedule controls present only on the one eligible
+  seeded appointment (`requested` + future), absent on prescribed and
+  past-`requested` ones; cancel and reschedule both 400 with an inline
+  error and no DB change when attempted on a locked appointment (and via
+  the list-page `returnTo` path too); reschedule 400 for a past time and
+  for garbage input, submitted value kept; successful reschedule (302,
+  `requestedAt` updated) then cancel (302, `status` → `cancelled`);
+  cancelling an already-cancelled appointment 400s; 404s for
+  `/appointments/999/cancel` and `/appointments/999/reschedule`; every
+  existing page (agents/therapies/therapists lists & details, therapist
+  dashboards, Phase 5 booking, Phase 6 prescribing) still 200s/302s as
+  before. `npm run lint` and `tsc --noEmit` both clean. Test data (a
+  throwaway booking, and the reschedule/cancel exercised on seeded
+  appointment 5) was cleaned up / reset afterwards. No browser
+  click-through by Claude — worth a quick manual look.
+
+### Deviations from the specs
+
+- None beyond what `specs/phase-7-plan.md` already called out (a separate
+  `_row.ejs` partial rather than sharing the therapist-side one).
+
 ## Next phase
 
-Phase 7 — View & manage bookings. See `specs/roadmap.md` for its scope.
-Appointments now carry `status` (`requested`/`prescribed`), `therapyId`,
-`notes`, and `prescribedAt`; cancel/reschedule will need a new status value.
+Phase 8 — Supervisor view. See `specs/roadmap.md` for its scope.
 
 Backlog note: Phase 11 (navigation back to home from the list pages —
 now `/agents`, `/therapies`, and `/therapists`) is in `specs/roadmap.md`,

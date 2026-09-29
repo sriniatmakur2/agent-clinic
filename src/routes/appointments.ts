@@ -81,6 +81,20 @@ export function createAppointment(input: {
   return { id: Number(inserted.lastInsertRowid) };
 }
 
+// Eligible for cancel/reschedule: not yet prescribed, and the requested time
+// hasn't passed yet. Once prescribed or past, the appointment is locked.
+export function canCancelOrReschedule(appointment: { status: string; requestedAt: string }): boolean {
+  return appointment.status === "requested" && new Date(appointment.requestedAt).getTime() > Date.now();
+}
+
+// Pre-fills the reschedule <input type="datetime-local">, which has no offset
+// and expects local time — mirrors how createAppointment parses that input.
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function findAppointment(id: number) {
   return db
     .select({
@@ -107,7 +121,13 @@ type Appointment = NonNullable<ReturnType<typeof findAppointment>>;
 function renderAppointmentShow(
   reply: FastifyReply,
   appointment: Appointment,
-  options: { code?: number; prescriptionError?: string; prescriptionForm?: { therapyId?: string; notes?: string } } = {},
+  options: {
+    code?: number;
+    prescriptionError?: string;
+    prescriptionForm?: { therapyId?: string; notes?: string };
+    actionError?: string;
+    rescheduleValue?: string;
+  } = {},
 ) {
   const isPrescribed = appointment.status === "prescribed";
 
@@ -115,6 +135,7 @@ function renderAppointmentShow(
     title: `${isPrescribed ? "Therapy prescribed" : "Appointment requested"} — AgentClinic`,
     appointment,
     isPrescribed,
+    canManage: canCancelOrReschedule(appointment),
     requestedAtLabel: formatAppointmentTime(appointment.requestedAt),
     agentAilments: getAilmentsByAgent([appointment.agent.id]).get(appointment.agent.id) ?? [],
     allTherapies: db.select().from(therapies).all(),
@@ -123,6 +144,8 @@ function renderAppointmentShow(
       therapyId: appointment.therapy ? String(appointment.therapy.id) : "",
       notes: appointment.notes ?? "",
     },
+    actionError: options.actionError ?? null,
+    rescheduleValue: options.rescheduleValue ?? toDatetimeLocalValue(appointment.requestedAt),
   });
 }
 
@@ -132,7 +155,94 @@ function renderNotFound(reply: FastifyReply) {
   });
 }
 
+// The agent's-eye view of one agent's appointments (the "my appointments" list).
+function buildAgentAppointmentRows(agentId: number) {
+  const rows = db
+    .select({
+      id: appointments.id,
+      requestedAt: appointments.requestedAt,
+      status: appointments.status,
+      therapist: therapists,
+      therapy: therapies,
+    })
+    .from(appointments)
+    .innerJoin(therapists, eq(appointments.therapistId, therapists.id))
+    .leftJoin(therapies, eq(appointments.therapyId, therapies.id))
+    .where(eq(appointments.agentId, agentId))
+    .all();
+
+  const withContext = rows.map((row) => ({
+    ...row,
+    requestedAtLabel: formatAppointmentTime(row.requestedAt),
+    rescheduleValue: toDatetimeLocalValue(row.requestedAt),
+    canManage: canCancelOrReschedule(row),
+  }));
+
+  const now = Date.now();
+  const time = (row: { requestedAt: string }) => new Date(row.requestedAt).getTime();
+  const upcoming = withContext.filter((r) => time(r) > now).sort((a, b) => time(a) - time(b));
+  const past = withContext.filter((r) => time(r) <= now).sort((a, b) => time(b) - time(a));
+  return { upcoming, past };
+}
+
+type AgentRow = typeof agents.$inferSelect;
+
+// Renders the agent picker + (if an agent is selected) their appointment list.
+// Reused by GET /appointments and by the cancel/reschedule POSTs' 400 re-render
+// when the form was submitted from the list page.
+function renderAppointmentsIndex(
+  reply: FastifyReply,
+  options: {
+    code?: number;
+    agent?: AgentRow;
+    rowError?: { appointmentId: number; message: string };
+    rescheduleForm?: { appointmentId: number; requestedAt?: string };
+  } = {},
+) {
+  const agent = options.agent;
+  const { upcoming, past } = agent ? buildAgentAppointmentRows(agent.id) : { upcoming: [], past: [] };
+
+  return reply.code(options.code ?? 200).view("appointments/index.ejs", {
+    title: agent ? `${agent.name}'s appointments — AgentClinic` : "My appointments — AgentClinic",
+    allAgents: db.select().from(agents).all(),
+    agent: agent ?? null,
+    upcoming,
+    past,
+    rowError: options.rowError ?? null,
+    rescheduleForm: options.rescheduleForm ?? null,
+  });
+}
+
+// Re-renders whichever page the cancel/reschedule form was submitted from
+// (the appointment page or the list page) with a 400 and an inline error.
+function renderActionError(
+  reply: FastifyReply,
+  appointment: Appointment,
+  returnTo: string,
+  message: string,
+  rescheduleValue?: string,
+) {
+  if (returnTo.startsWith("/appointments?agentId=")) {
+    return renderAppointmentsIndex(reply, {
+      code: 400,
+      agent: appointment.agent,
+      rowError: { appointmentId: appointment.id, message },
+      rescheduleForm:
+        rescheduleValue === undefined ? undefined : { appointmentId: appointment.id, requestedAt: rescheduleValue },
+    });
+  }
+  return renderAppointmentShow(reply, appointment, { code: 400, actionError: message, rescheduleValue });
+}
+
 export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
+  // The agent picker + "my appointments" list.
+  app.get<{ Querystring: { agentId?: string } }>("/appointments", async (request, reply) => {
+    const agentId = Number(request.query.agentId);
+    const agent = agentId ? db.select().from(agents).where(eq(agents.id, agentId)).get() : undefined;
+
+    return renderAppointmentsIndex(reply, { agent });
+  });
+
   app.get<{ Params: { id: string } }>("/appointments/:id", async (request, reply) => {
     const appointment = findAppointment(Number(request.params.id));
     if (!appointment) {
@@ -179,5 +289,73 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
       .run();
 
     return reply.redirect(`/appointments/${appointment.id}`);
+  });
+
+  // The agent cancels a not-yet-prescribed, still-upcoming appointment.
+  app.post<{
+    Params: { id: string };
+    Body: { returnTo?: string };
+  }>("/appointments/:id/cancel", async (request, reply) => {
+    const appointment = findAppointment(Number(request.params.id));
+    if (!appointment) {
+      return renderNotFound(reply);
+    }
+
+    const returnTo = request.body?.returnTo || `/appointments/${appointment.id}`;
+
+    if (!canCancelOrReschedule(appointment)) {
+      return renderActionError(reply, appointment, returnTo, "This appointment can no longer be changed.");
+    }
+
+    db.update(appointments).set({ status: "cancelled" }).where(eq(appointments.id, appointment.id)).run();
+
+    return reply.redirect(returnTo);
+  });
+
+  // The agent reschedules a not-yet-prescribed, still-upcoming appointment to
+  // a new future time. Same validation as the original booking.
+  app.post<{
+    Params: { id: string };
+    Body: { requestedAt?: string; returnTo?: string };
+  }>("/appointments/:id/reschedule", async (request, reply) => {
+    const appointment = findAppointment(Number(request.params.id));
+    if (!appointment) {
+      return renderNotFound(reply);
+    }
+
+    const { requestedAt, returnTo: returnToInput } = request.body ?? {};
+    const returnTo = returnToInput || `/appointments/${appointment.id}`;
+
+    if (!canCancelOrReschedule(appointment)) {
+      return renderActionError(reply, appointment, returnTo, "This appointment can no longer be changed.");
+    }
+
+    const rawTime = requestedAt?.trim() ?? "";
+    const newRequestedAt = DATETIME_LOCAL.test(rawTime) ? new Date(rawTime) : null;
+    if (!newRequestedAt || Number.isNaN(newRequestedAt.getTime())) {
+      return renderActionError(
+        reply,
+        appointment,
+        returnTo,
+        "Pick a valid date and time for the appointment.",
+        requestedAt,
+      );
+    }
+    if (newRequestedAt.getTime() <= Date.now()) {
+      return renderActionError(
+        reply,
+        appointment,
+        returnTo,
+        "Pick a time in the future for the appointment.",
+        requestedAt,
+      );
+    }
+
+    db.update(appointments)
+      .set({ requestedAt: newRequestedAt.toISOString() })
+      .where(eq(appointments.id, appointment.id))
+      .run();
+
+    return reply.redirect(returnTo);
   });
 }
