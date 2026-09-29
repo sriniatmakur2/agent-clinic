@@ -1,0 +1,29 @@
+<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
+  <div class="flex flex-col gap-2 text-center">
+    <h1 class="text-3xl font-bold tracking-tight text-teal-700">Therapists on staff</h1>
+    <p class="text-slate-600">Meet the clinicians who help agents feel like themselves again.</p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <% therapists.forEach((therapist) => { %>
+      <a
+        href="/therapists/<%= therapist.id %>"
+        class="flex items-start gap-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
+      >
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-50 text-2xl">
+          <%= therapist.avatarEmoji %>
+        </span>
+        <span class="flex flex-col gap-2">
+          <span class="font-semibold text-slate-900"><%= therapist.name %></span>
+          <% if (therapist.specialties.length > 0) { %>
+            <span class="flex flex-wrap gap-1.5">
+              <% therapist.specialties.forEach((specialty) => { %>
+                <span class="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700"><%= specialty %></span>
+              <% }) %>
+            </span>
+          <% } %>
+        </span>
+      </a>
+    <% }) %>
+  </div>
+</main>

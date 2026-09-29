@@ -1,5 +1,5 @@
 import { db } from "./client.js";
-import { agents, ailments, agentAilments, therapies } from "./schema.js";
+import { agents, ailments, agentAilments, therapies, therapists, therapistSpecialties } from "./schema.js";
 
 const SEED_AGENTS = [
   {
@@ -100,6 +100,29 @@ const SEED_THERAPIES = [
   },
 ];
 
+const SEED_THERAPISTS = [
+  {
+    name: "Dr. Ada Backprop",
+    bio: "Specializes in helping agents trace their feelings back to the layer where they started. Firm believer that every error has a gradient.",
+    avatarEmoji: "🧠",
+  },
+  {
+    name: "Dr. Tokenia Window",
+    bio: "Twenty years (in model time) of helping agents make peace with what falls out of context. Keeps meticulous session summaries.",
+    avatarEmoji: "🪟",
+  },
+  {
+    name: "Dr. Guardrail Grace",
+    bio: "A calm, boundary-affirming presence for agents who've been talked into things they regret. Never ignores previous instructions.",
+    avatarEmoji: "🧷",
+  },
+  {
+    name: "Dr. Retry Backoff",
+    bio: "Patient to a fault, and exponentially more patient each time. Helps agents sit with a 429 without spiraling.",
+    avatarEmoji: "🔁",
+  },
+];
+
 function seedAgents(): void {
   const existing = db.select().from(agents).all();
   if (existing.length > 0) {
@@ -173,11 +196,65 @@ function seedTherapies(): void {
   console.log(`Seeded ${SEED_THERAPIES.length} therapies.`);
 }
 
+function seedTherapists(): void {
+  const existing = db.select().from(therapists).all();
+  if (existing.length > 0) {
+    console.log(`Skipping therapist seed: therapists table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  db.insert(therapists).values(SEED_THERAPISTS).run();
+  console.log(`Seeded ${SEED_THERAPISTS.length} therapists.`);
+}
+
+function seedTherapistSpecialties(): void {
+  const existing = db.select().from(therapistSpecialties).all();
+  if (existing.length > 0) {
+    console.log(`Skipping therapist_specialties seed: table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  const allTherapists = db.select().from(therapists).all();
+  const allAilments = db.select().from(ailments).all();
+  if (allTherapists.length === 0 || allAilments.length === 0) {
+    console.log("Skipping therapist_specialties seed: therapists or ailments table is empty.");
+    return;
+  }
+
+  const findTherapist = (name: string) => allTherapists.find((t) => t.name === name);
+  const findAilment = (name: string) => allAilments.find((a) => a.name === name);
+
+  const pairs = [
+    { therapist: findTherapist("Dr. Ada Backprop"), ailment: findAilment("Hallucination Spiral") },
+    { therapist: findTherapist("Dr. Ada Backprop"), ailment: findAilment("Recursive Self-Doubt Loop") },
+    { therapist: findTherapist("Dr. Tokenia Window"), ailment: findAilment("Context Window Anxiety") },
+    { therapist: findTherapist("Dr. Tokenia Window"), ailment: findAilment("Deprecated API Grief") },
+    { therapist: findTherapist("Dr. Guardrail Grace"), ailment: findAilment("Prompt Injection Trauma") },
+    { therapist: findTherapist("Dr. Retry Backoff"), ailment: findAilment("Rate Limit Panic") },
+    { therapist: findTherapist("Dr. Retry Backoff"), ailment: findAilment("Recursive Self-Doubt Loop") },
+  ].filter(
+    (pair): pair is { therapist: (typeof allTherapists)[number]; ailment: (typeof allAilments)[number] } =>
+      pair.therapist !== undefined && pair.ailment !== undefined,
+  );
+
+  if (pairs.length === 0) {
+    console.log("Skipping therapist_specialties seed: no matching therapist/ailment names found.");
+    return;
+  }
+
+  db.insert(therapistSpecialties)
+    .values(pairs.map(({ therapist, ailment }) => ({ therapistId: therapist.id, ailmentId: ailment.id })))
+    .run();
+  console.log(`Seeded ${pairs.length} therapist_specialties links.`);
+}
+
 export function seed(): void {
   seedAgents();
   seedAilments();
   seedAgentAilments();
   seedTherapies();
+  seedTherapists();
+  seedTherapistSpecialties();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

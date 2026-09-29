@@ -39,3 +39,21 @@ export const therapies = sqliteTable("therapies", {
   durationMinutes: integer("duration_minutes").notNull(),
   icon: text("icon").notNull(),
 });
+
+export const therapists = sqliteTable("therapists", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  bio: text("bio").notNull(),
+  avatarEmoji: text("avatar_emoji").notNull(),
+});
+
+// A therapist's specialties are the ailments (from the Phase 2 catalog) they treat.
+export const therapistSpecialties = sqliteTable("therapist_specialties", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  therapistId: integer("therapist_id")
+    .notNull()
+    .references(() => therapists.id),
+  ailmentId: integer("ailment_id")
+    .notNull()
+    .references(() => ailments.id),
+});

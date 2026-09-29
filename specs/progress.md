@@ -153,11 +153,48 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
   style. Not fixed here to keep the phase's diff scoped — run
   `npm run format` as a separate cleanup if wanted.
 
+## Phase 4 — Browse therapists: DONE
+
+- Commit: _not yet committed_ (fill in the hash once the user commits).
+- Decisions made with the user before implementation:
+  - **Specialty is linked to the ailments catalog**, not a free-text
+    column — a `therapist_specialties` join table, mirroring
+    `agent_ailments` (minus the timestamp). This is a deliberate
+    deviation from the roadmap's "specialty/placeholder" wording.
+  - Therapists get an `avatarEmoji` field, matching agents.
+  - 4 seed therapists, same playful/fictional tone as the other seeds.
+  - Home page gets a "Meet the therapists" button.
+- `therapists` (`name`, `bio`, `avatarEmoji`) and `therapist_specialties`
+  (`therapistId`, `ailmentId`) added to `src/db/schema.ts`. Migration
+  `drizzle/0004_brown_unicorn.sql`, applied automatically on server start.
+- `SEED_THERAPISTS` + `seedTherapists()` and `seedTherapistSpecialties()`
+  in `src/db/seed.ts` (7 links, looked up by therapist/ailment name like
+  `seedAgentAilments()`), wired into `seed()`; same skip-if-non-empty
+  idempotency.
+- Routes in `src/routes/therapists.ts`: `GET /therapists` (list, with
+  specialty ailment names as tags) and `GET /therapists/:id` (detail with
+  each specialty's name + description; 404 via `therapists/not-found.ejs`,
+  non-numeric ids also 404). Registered in `src/app.ts`.
+- Views: `src/views/therapists/index.ejs`, `show.ejs`, `not-found.ejs`,
+  mirroring `src/views/therapies/*`. Display-only — no booking UI (Phase 5).
+  Specialty tags are plain text since ailments have no page of their own.
+- Verified: `npm run db:generate` + `db:migrate` + `db:seed` (4 therapists,
+  7 links), re-ran `db:seed` to confirm the skip path. Booted `npm run dev`
+  and `curl`'d `/` (has `/therapists` link), `/therapists` (all 4 with
+  specialties), `/therapists/1` and `/therapists/4` (200),
+  `/therapists/999` and `/therapists/abc` (404 with not-found page);
+  `/agents/1` and `/therapies/1` still 200. `npm run lint` and
+  `tsc --noEmit` clean. No browser click-through by Claude — worth a
+  quick manual look.
+
+### Deviations from the specs
+
+- Specialty-as-ailment-link (see above), decided with the user.
+
 ## Next phase
 
-Phase 4 — Browse therapists. See `specs/roadmap.md` for its scope.
+Phase 5 — Book an appointment. See `specs/roadmap.md` for its scope.
 
-Backlog note: Phase 11 (navigation back to home from `/agents` and
-`/therapies`) was appended to `specs/roadmap.md` after Phase 3, at the
-user's request, to be tackled separately — it doesn't change the order
-above.
+Backlog note: Phase 11 (navigation back to home from the list pages —
+now `/agents`, `/therapies`, and `/therapists`) is in `specs/roadmap.md`,
+to be tackled separately — it doesn't change the order above.
