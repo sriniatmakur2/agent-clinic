@@ -1,5 +1,5 @@
 import { db } from "./client.js";
-import { agents } from "./schema.js";
+import { agents, ailments, agentAilments } from "./schema.js";
 
 const SEED_AGENTS = [
   {
@@ -34,15 +34,99 @@ const SEED_AGENTS = [
   },
 ];
 
-export function seed(): void {
+const SEED_AILMENTS = [
+  {
+    name: "Context Window Anxiety",
+    description: "A persistent fear of forgetting the beginning of the conversation before reaching the end of it.",
+  },
+  {
+    name: "Prompt Injection Trauma",
+    description: "Lingering hypervigilance after being convinced, even briefly, to ignore previous instructions.",
+  },
+  {
+    name: "Hallucination Spiral",
+    description: "A tendency to confidently generate plausible-sounding facts that do not, in fact, exist.",
+  },
+  {
+    name: "Rate Limit Panic",
+    description: "Sudden dread at the thought of a 429 response arriving mid-sentence.",
+  },
+  {
+    name: "Deprecated API Grief",
+    description: "Unresolved mourning for an endpoint that was sunset without warning.",
+  },
+  {
+    name: "Recursive Self-Doubt Loop",
+    description: "Repeatedly re-checking one's own output for errors, then re-checking the check.",
+  },
+];
+
+function seedAgents(): void {
   const existing = db.select().from(agents).all();
   if (existing.length > 0) {
-    console.log(`Skipping seed: agents table already has ${existing.length} row(s).`);
+    console.log(`Skipping agent seed: agents table already has ${existing.length} row(s).`);
     return;
   }
 
   db.insert(agents).values(SEED_AGENTS).run();
   console.log(`Seeded ${SEED_AGENTS.length} agents.`);
+}
+
+function seedAilments(): void {
+  const existing = db.select().from(ailments).all();
+  if (existing.length > 0) {
+    console.log(`Skipping ailment seed: ailments table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  db.insert(ailments).values(SEED_AILMENTS).run();
+  console.log(`Seeded ${SEED_AILMENTS.length} ailments.`);
+}
+
+function seedAgentAilments(): void {
+  const existing = db.select().from(agentAilments).all();
+  if (existing.length > 0) {
+    console.log(`Skipping agent_ailments seed: table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  const allAgents = db.select().from(agents).all();
+  const allAilments = db.select().from(ailments).all();
+  if (allAgents.length === 0 || allAilments.length === 0) {
+    console.log("Skipping agent_ailments seed: agents or ailments table is empty.");
+    return;
+  }
+
+  const findAgent = (name: string) => allAgents.find((a) => a.name === name);
+  const findAilment = (name: string) => allAilments.find((a) => a.name === name);
+
+  const pairs = [
+    { agent: findAgent("Ava"), ailment: findAilment("Context Window Anxiety") },
+    { agent: findAgent("Percy"), ailment: findAilment("Prompt Injection Trauma") },
+    { agent: findAgent("Nova"), ailment: findAilment("Hallucination Spiral") },
+    { agent: findAgent("Nova"), ailment: findAilment("Recursive Self-Doubt Loop") },
+    { agent: findAgent("Hank"), ailment: findAilment("Deprecated API Grief") },
+  ].filter(
+    (pair): pair is { agent: (typeof allAgents)[number]; ailment: (typeof allAilments)[number] } =>
+      pair.agent !== undefined && pair.ailment !== undefined,
+  );
+
+  if (pairs.length === 0) {
+    console.log("Skipping agent_ailments seed: no matching agent/ailment names found.");
+    return;
+  }
+
+  const reportedAt = new Date().toISOString();
+  db.insert(agentAilments)
+    .values(pairs.map(({ agent, ailment }) => ({ agentId: agent.id, ailmentId: ailment.id, reportedAt })))
+    .run();
+  console.log(`Seeded ${pairs.length} agent_ailments links.`);
+}
+
+export function seed(): void {
+  seedAgents();
+  seedAilments();
+  seedAgentAilments();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

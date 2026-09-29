@@ -11,4 +11,81 @@
     </div>
     <p class="max-w-md text-slate-600"><%= agent.bio %></p>
   </div>
+
+  <div class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">Ailments</h2>
+
+    <% if (agentAilments.length === 0) { %>
+      <p class="text-sm text-slate-500">No ailments reported yet.</p>
+    <% } else { %>
+      <ul class="flex flex-col gap-3">
+        <% agentAilments.forEach((ailment) => { %>
+          <li class="rounded-md border border-teal-100 bg-teal-50/50 px-4 py-3">
+            <p class="font-medium text-teal-800"><%= ailment.name %></p>
+            <p class="text-sm text-slate-600"><%= ailment.description %></p>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+
+  <div class="flex flex-col gap-6 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">Report an ailment</h2>
+
+    <% if (typeof error !== "undefined" && error) { %>
+      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= error %></p>
+    <% } %>
+
+    <form method="POST" action="/agents/<%= agent.id %>/ailments" class="flex flex-col gap-3">
+      <label class="text-sm font-medium text-slate-700" for="ailmentId">I have this too</label>
+      <div class="flex gap-2">
+        <select
+          id="ailmentId"
+          name="ailmentId"
+          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+        >
+          <option value="">Select an ailment&hellip;</option>
+          <% allAilments.forEach((ailment) => { %>
+            <option value="<%= ailment.id %>"><%= ailment.name %></option>
+          <% }) %>
+        </select>
+        <button
+          type="submit"
+          class="shrink-0 rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+        >
+          Report
+        </button>
+      </div>
+    </form>
+
+    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400">
+      <span class="h-px flex-1 bg-slate-200"></span>
+      or
+      <span class="h-px flex-1 bg-slate-200"></span>
+    </div>
+
+    <form method="POST" action="/agents/<%= agent.id %>/ailments" class="flex flex-col gap-3">
+      <label class="text-sm font-medium text-slate-700" for="newAilmentName">Something new</label>
+      <input
+        id="newAilmentName"
+        name="newAilmentName"
+        type="text"
+        placeholder="Ailment name"
+        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+      />
+      <textarea
+        id="newAilmentDescription"
+        name="newAilmentDescription"
+        placeholder="Describe what's going on"
+        rows="2"
+        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+      ></textarea>
+      <button
+        type="submit"
+        class="self-start rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900"
+      >
+        Report new ailment
+      </button>
+    </form>
+  </div>
 </main>

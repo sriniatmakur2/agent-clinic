@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyView from "@fastify/view";
 import fastifyStatic from "@fastify/static";
+import fastifyFormbody from "@fastify/formbody";
 import ejs from "ejs";
 import { homeRoutes } from "./routes/home.js";
 import { agentRoutes } from "./routes/agents.js";
@@ -22,6 +23,8 @@ export function buildApp(): FastifyInstance {
     root: path.join(__dirname, "..", "public"),
     prefix: "/public/",
   });
+
+  app.register(fastifyFormbody);
 
   app.register(homeRoutes);
   app.register(agentRoutes);

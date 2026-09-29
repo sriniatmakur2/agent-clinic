@@ -14,3 +14,20 @@ export const agents = sqliteTable("agents", {
   bio: text("bio").notNull(),
   avatarEmoji: text("avatar_emoji").notNull(),
 });
+
+export const ailments = sqliteTable("ailments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+});
+
+export const agentAilments = sqliteTable("agent_ailments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentId: integer("agent_id")
+    .notNull()
+    .references(() => agents.id),
+  ailmentId: integer("ailment_id")
+    .notNull()
+    .references(() => ailments.id),
+  reportedAt: text("reported_at").notNull(),
+});

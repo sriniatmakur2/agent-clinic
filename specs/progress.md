@@ -68,14 +68,58 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
   seed-on-boot) — both were explicitly decided with the user before
   implementation, not discovered mid-way.
 
-## Phase 2 — Ailments: NOT STARTED
+## Phase 2 — Ailments: DONE
+
+- Commit: pending (not yet committed as of this writing — see next
+  conversation's `git log` for the actual hash).
+- `ailments` table (`name`, `description`) and `agent_ailments` join
+  (`agentId`, `ailmentId`, `reportedAt`) added to `src/db/schema.ts`.
+  Migration `drizzle/0002_minor_toad.sql`, applied automatically on
+  server start like the existing tables.
+- Seed data extended in `src/db/seed.ts`: a 6-entry ailment catalog plus
+  a handful of `agent_ailments` links to seeded agents, so the detail
+  page has demo data before anyone reports anything new. Same
+  idempotent pattern as the Phase 1 agent seed (three independent
+  skip-if-non-empty checks, one per table).
+- "Report an ailment" is **both** picking from the catalog and writing
+  a brand-new one (decided with the user) — `POST /agents/:id/ailments`
+  in `src/routes/agents.ts` handles either: an `ailmentId` from a
+  dropdown, or a `newAilmentName`/`newAilmentDescription` pair that
+  inserts a new `ailments` row before linking it. No uniqueness
+  constraint — an agent can report the same ailment more than once by
+  design.
+- Added `@fastify/formbody` (not previously installed) to parse the
+  report form's `application/x-www-form-urlencoded` POST body;
+  registered in `src/app.ts` alongside the existing plugins.
+- View: `src/views/agents/show.ejs` now shows the agent's reported
+  ailments and the two report forms inline on the same page — no new
+  routes/views for a standalone ailment catalog (that pattern is
+  deferred to Phase 3's therapy catalog, which the roadmap actually
+  calls for).
+- Verified: `npm run db:generate` + `db:migrate` + `db:seed` (and
+  re-ran `db:seed` to confirm idempotency across all three tables).
+  Exercised the running dev server with `curl`: agent detail page
+  renders seeded ailments; POSTing an existing `ailmentId` and POSTing
+  a brand-new name/description both 302-redirect and the new/linked
+  ailment shows up immediately (including in other agents' dropdowns,
+  since the catalog is shared); a 404 for an unknown agent id; a 400
+  with an inline error and fully re-rendered page for an empty
+  submission. `npm run lint` and `tsc --noEmit` both clean.
+
+### Deviations from the specs
+
+- Caught and fixed one bug during verification, not a spec deviation:
+  an empty POST body comes through from `@fastify/formbody` as
+  `undefined` rather than `{}`, which crashed the destructuring
+  assignment in the route handler with a 500. Fixed with
+  `request.body ?? {}`.
+
+## Phase 3 — Therapy catalog: NOT STARTED
 
 Next up per `specs/roadmap.md`:
 
-- `ailments` table (name, description) — small fixed catalog.
-- `agent_ailments` join, linking agents to one or more ailments.
-- Ailments shown on the agent detail page, and an agent can report a
-  new ailment about themselves.
+- `therapies` table (name, description, duration).
+- List page and detail page for therapies.
 
-No plan written yet — start by reading `specs/roadmap.md`'s Phase 2
+No plan written yet — start by reading `specs/roadmap.md`'s Phase 3
 section and proposing a plan per `CLAUDE.md`.
