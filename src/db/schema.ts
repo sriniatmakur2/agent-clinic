@@ -7,12 +7,20 @@ export const bootLog = sqliteTable("boot_log", {
   bootedAt: text("booted_at").notNull(),
 });
 
+export const supervisors = sqliteTable("supervisors", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  bio: text("bio").notNull(),
+  avatarEmoji: text("avatar_emoji").notNull(),
+});
+
 export const agents = sqliteTable("agents", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   role: text("role").notNull(),
   bio: text("bio").notNull(),
   avatarEmoji: text("avatar_emoji").notNull(),
+  supervisorId: integer("supervisor_id").references(() => supervisors.id),
 });
 
 export const ailments = sqliteTable("ailments", {

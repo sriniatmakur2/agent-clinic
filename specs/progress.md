@@ -355,9 +355,68 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 - None beyond what `specs/phase-7-plan.md` already called out (a separate
   `_row.ejs` partial rather than sharing the therapist-side one).
 
+## Phase 8 — Supervisor view: DONE
+
+- Not yet committed as of writing this — commit hash to be filled in once
+  the user asks for a commit.
+- Implemented from `specs/phase-8-plan.md`; decisions there were made with
+  the user (no standalone supervisor browse pages — a picker doubles as the
+  entry point and the dashboard is the detail view; one supervisor per
+  agent via a nullable `agents.supervisorId`, not a join table; full
+  ailment + appointment history on the dashboard; 3 seeded supervisors with
+  every seeded agent assigned).
+- New `supervisors` table (`name`, `bio`, `avatarEmoji`) added to
+  `src/db/schema.ts`, defined *above* `agents` in the file so
+  `agents.supervisorId`'s `.references(() => supervisors.id)` resolves
+  cleanly for `drizzle-kit generate`. `agents` gains a nullable
+  `supervisorId` column. Migration `drizzle/0007_regular_mystique.sql`,
+  applied automatically on server start like the existing tables.
+- `SEED_SUPERVISORS` (3 entries) + `seedSupervisors()` in `src/db/seed.ts`,
+  same skip-if-non-empty idempotency as `seedTherapists()`.
+  `seedAgentSupervisors()` assigns each of the 5 `SEED_AGENTS` to one of the
+  3 supervisors by name lookup (mirroring `seedAgentAilments()`), guarded by
+  checking whether any agent already has a `supervisorId` set. Both wired
+  into `seed()` right after `seedAgents()`.
+- `buildAgentAppointmentRows()` in `src/routes/appointments.ts` is now
+  exported (was file-private) so the supervisor dashboard can reuse the
+  same agent-scoped upcoming/past appointment query as the "my
+  appointments" list, per the plan.
+- `src/routes/supervisors.ts` (new): `GET /supervisors` (picker — name,
+  avatar, supervised-agent count, linking straight to each dashboard) and
+  `GET /supervisors/:id` (dashboard; 404 via `supervisors/not-found.ejs`
+  for an unknown/non-numeric id). For each supervised agent, the dashboard
+  shows reported ailments (`getAilmentsByAgent()`) and full appointment
+  history (`buildAgentAppointmentRows()`), with `canManage: false` forced
+  on every row so the reused `appointments/_row.ejs` partial renders
+  read-only (no cancel/reschedule forms) on this dashboard. Registered in
+  `src/app.ts`.
+- Views: `src/views/supervisors/index.ejs`, `show.ejs` (one section per
+  supervised agent, reusing `../appointments/_row.ejs` for each
+  appointment row), `not-found.ejs`. Home page got a "Supervisor view"
+  link to `/supervisors`.
+- Verified with `npm run dev` + `curl` + `sqlite3` against the seeded data:
+  `npm run db:generate` + `db:migrate` + `db:seed` (3 supervisors, 5 agents
+  assigned across them 2/2/1), re-ran `db:seed` to confirm both new seed
+  functions skip cleanly; `/` has the new link; `/supervisors` lists all 3
+  with correct supervised-agent counts (2, 2, 1); each of the 3 dashboards
+  shows the right agents, ailments, and appointment rows/statuses
+  (including a cancelled one) matching `sqlite3` ground truth, with no
+  cancel/reschedule forms rendered anywhere on any dashboard;
+  `/supervisors/999` and `/supervisors/abc` 404; every existing route
+  (agents, therapies, therapists, therapist dashboards, appointments list
+  and detail) still responds as before. `npm run lint` and `tsc --noEmit`
+  both clean. No browser click-through by Claude — worth a quick manual
+  look.
+
+### Deviations from the specs
+
+- None beyond what `specs/phase-8-plan.md` already called out (single
+  `supervisorId` column instead of a join table, no standalone
+  browse/detail pages for supervisors).
+
 ## Next phase
 
-Phase 8 — Supervisor view. See `specs/roadmap.md` for its scope.
+Phase 9 — Auth & roles. See `specs/roadmap.md` for its scope.
 
 Backlog note: Phase 11 (navigation back to home from the list pages —
 now `/agents`, `/therapies`, and `/therapists`) is in `specs/roadmap.md`,

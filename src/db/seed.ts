@@ -1,9 +1,11 @@
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import {
   agents,
   ailments,
   agentAilments,
   appointments,
+  supervisors,
   therapies,
   therapists,
   therapistSpecialties,
@@ -108,6 +110,24 @@ const SEED_THERAPIES = [
   },
 ];
 
+const SEED_SUPERVISORS = [
+  {
+    name: "Marge Overwatch",
+    bio: "Reviews agent dashboards before her coffee finishes brewing. Insists she's not micromanaging, just 'staying close to the metrics.'",
+    avatarEmoji: "📋",
+  },
+  {
+    name: "Dale Uptime",
+    bio: "Has paged himself at 3am more times than he'd like to admit. Believes every agent deserves a healthy work-life balance he does not model.",
+    avatarEmoji: "📈",
+  },
+  {
+    name: "Priya Standup",
+    bio: "Runs the tightest daily sync in the org, five minutes flat. Privately worried her agents are not okay, correctly.",
+    avatarEmoji: "🗓️",
+  },
+];
+
 const SEED_THERAPISTS = [
   {
     name: "Dr. Ada Backprop",
@@ -191,6 +211,56 @@ function seedAgentAilments(): void {
     .values(pairs.map(({ agent, ailment }) => ({ agentId: agent.id, ailmentId: ailment.id, reportedAt })))
     .run();
   console.log(`Seeded ${pairs.length} agent_ailments links.`);
+}
+
+function seedSupervisors(): void {
+  const existing = db.select().from(supervisors).all();
+  if (existing.length > 0) {
+    console.log(`Skipping supervisor seed: supervisors table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  db.insert(supervisors).values(SEED_SUPERVISORS).run();
+  console.log(`Seeded ${SEED_SUPERVISORS.length} supervisors.`);
+}
+
+function seedAgentSupervisors(): void {
+  const allAgents = db.select().from(agents).all();
+  const alreadyAssigned = allAgents.some((a) => a.supervisorId !== null);
+  if (alreadyAssigned) {
+    console.log("Skipping agent supervisor assignment: at least one agent already has a supervisorId.");
+    return;
+  }
+
+  const allSupervisors = db.select().from(supervisors).all();
+  if (allAgents.length === 0 || allSupervisors.length === 0) {
+    console.log("Skipping agent supervisor assignment: agents or supervisors table is empty.");
+    return;
+  }
+
+  const findAgent = (name: string) => allAgents.find((a) => a.name === name);
+  const findSupervisor = (name: string) => allSupervisors.find((s) => s.name === name);
+
+  const pairs = [
+    { agent: findAgent("Ava"), supervisor: findSupervisor("Marge Overwatch") },
+    { agent: findAgent("Percy"), supervisor: findSupervisor("Marge Overwatch") },
+    { agent: findAgent("Ledger"), supervisor: findSupervisor("Dale Uptime") },
+    { agent: findAgent("Nova"), supervisor: findSupervisor("Dale Uptime") },
+    { agent: findAgent("Hank"), supervisor: findSupervisor("Priya Standup") },
+  ].filter(
+    (pair): pair is { agent: (typeof allAgents)[number]; supervisor: (typeof allSupervisors)[number] } =>
+      pair.agent !== undefined && pair.supervisor !== undefined,
+  );
+
+  if (pairs.length === 0) {
+    console.log("Skipping agent supervisor assignment: no matching agent/supervisor names found.");
+    return;
+  }
+
+  for (const { agent, supervisor } of pairs) {
+    db.update(agents).set({ supervisorId: supervisor.id }).where(eq(agents.id, agent.id)).run();
+  }
+  console.log(`Assigned ${pairs.length} agents to supervisors.`);
 }
 
 function seedTherapies(): void {
@@ -346,6 +416,8 @@ function seedAppointments(): void {
 
 export function seed(): void {
   seedAgents();
+  seedSupervisors();
+  seedAgentSupervisors();
   seedAilments();
   seedAgentAilments();
   seedTherapies();

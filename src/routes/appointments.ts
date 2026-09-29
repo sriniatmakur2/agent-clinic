@@ -156,7 +156,8 @@ function renderNotFound(reply: FastifyReply) {
 }
 
 // The agent's-eye view of one agent's appointments (the "my appointments" list).
-function buildAgentAppointmentRows(agentId: number) {
+// Also reused by the supervisor dashboard (read-only there).
+export function buildAgentAppointmentRows(agentId: number) {
   const rows = db
     .select({
       id: appointments.id,

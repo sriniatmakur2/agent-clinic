@@ -10,6 +10,7 @@ import { agentRoutes } from "./routes/agents.js";
 import { therapyRoutes } from "./routes/therapies.js";
 import { therapistRoutes } from "./routes/therapists.js";
 import { appointmentRoutes } from "./routes/appointments.js";
+import { supervisorRoutes } from "./routes/supervisors.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,6 +35,7 @@ export function buildApp(): FastifyInstance {
   app.register(therapyRoutes);
   app.register(therapistRoutes);
   app.register(appointmentRoutes);
+  app.register(supervisorRoutes);
 
   return app;
 }
