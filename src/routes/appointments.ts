@@ -2,6 +2,15 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { agentAilments, agents, ailments, appointments, therapies, therapists } from "../db/schema.js";
+import {
+  type CurrentUser,
+  forbid,
+  isAgent,
+  isSafePath,
+  isSupervisorOf,
+  isTherapist,
+  requireLogin,
+} from "../auth.js";
 
 // Matches what <input type="datetime-local"> submits, e.g. "2026-10-01T14:30" (seconds optional).
 const DATETIME_LOCAL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
@@ -116,11 +125,29 @@ function findAppointment(id: number) {
 
 type Appointment = NonNullable<ReturnType<typeof findAppointment>>;
 
+// The appointment's agent, its therapist, and the agent's supervisor can view it.
+function canView(user: CurrentUser, appointment: Appointment): boolean {
+  return (
+    isAgent(user, appointment.agent.id) ||
+    isTherapist(user, appointment.therapist.id) ||
+    isSupervisorOf(user, appointment.agent)
+  );
+}
+
+const BACK_LABELS: Record<CurrentUser["role"], string> = {
+  agent: "Back to my appointments",
+  therapist: "Back to my appointments",
+  supervisor: "Back to my team",
+};
+
 // Renders the appointment page from GET and from the prescription form's 400.
 // The form is pre-filled with the current prescription so it doubles as "revise".
+// Which controls show depends on the viewer: manage (cancel/reschedule) for the
+// appointment's agent, prescribe for its therapist, neither for a supervisor.
 function renderAppointmentShow(
   reply: FastifyReply,
   appointment: Appointment,
+  viewer: CurrentUser,
   options: {
     code?: number;
     prescriptionError?: string;
@@ -135,6 +162,9 @@ function renderAppointmentShow(
     title: `${isPrescribed ? "Therapy prescribed" : "Appointment requested"} — AgentClinic`,
     appointment,
     isPrescribed,
+    backLink: { href: viewer.homePath, label: BACK_LABELS[viewer.role] },
+    showManage: isAgent(viewer, appointment.agent.id),
+    showPrescribe: isTherapist(viewer, appointment.therapist.id),
     canManage: canCancelOrReschedule(appointment),
     requestedAtLabel: formatAppointmentTime(appointment.requestedAt),
     agentAilments: getAilmentsByAgent([appointment.agent.id]).get(appointment.agent.id) ?? [],
@@ -188,25 +218,23 @@ export function buildAgentAppointmentRows(agentId: number) {
 
 type AgentRow = typeof agents.$inferSelect;
 
-// Renders the agent picker + (if an agent is selected) their appointment list.
-// Reused by GET /appointments and by the cancel/reschedule POSTs' 400 re-render
-// when the form was submitted from the list page.
+// Renders the logged-in agent's own appointment list. Reused by GET /appointments
+// and by the cancel/reschedule POSTs' 400 re-render when the form was submitted
+// from the list page.
 function renderAppointmentsIndex(
   reply: FastifyReply,
+  agent: AgentRow,
   options: {
     code?: number;
-    agent?: AgentRow;
     rowError?: { appointmentId: number; message: string };
     rescheduleForm?: { appointmentId: number; requestedAt?: string };
   } = {},
 ) {
-  const agent = options.agent;
-  const { upcoming, past } = agent ? buildAgentAppointmentRows(agent.id) : { upcoming: [], past: [] };
+  const { upcoming, past } = buildAgentAppointmentRows(agent.id);
 
   return reply.code(options.code ?? 200).view("appointments/index.ejs", {
-    title: agent ? `${agent.name}'s appointments — AgentClinic` : "My appointments — AgentClinic",
-    allAgents: db.select().from(agents).all(),
-    agent: agent ?? null,
+    title: "My appointments — AgentClinic",
+    agent,
     upcoming,
     past,
     rowError: options.rowError ?? null,
@@ -219,38 +247,62 @@ function renderAppointmentsIndex(
 function renderActionError(
   reply: FastifyReply,
   appointment: Appointment,
+  viewer: CurrentUser,
   returnTo: string,
   message: string,
   rescheduleValue?: string,
 ) {
-  if (returnTo.startsWith("/appointments?agentId=")) {
-    return renderAppointmentsIndex(reply, {
+  if (returnTo === "/appointments") {
+    return renderAppointmentsIndex(reply, appointment.agent, {
       code: 400,
-      agent: appointment.agent,
       rowError: { appointmentId: appointment.id, message },
       rescheduleForm:
         rescheduleValue === undefined ? undefined : { appointmentId: appointment.id, requestedAt: rescheduleValue },
     });
   }
-  return renderAppointmentShow(reply, appointment, { code: 400, actionError: message, rescheduleValue });
+  return renderAppointmentShow(reply, appointment, viewer, { code: 400, actionError: message, rescheduleValue });
+}
+
+// Where a cancel/reschedule redirects afterwards: the submitted same-site
+// returnTo, else the appointment page.
+function resolveReturnTo(returnTo: string | undefined, appointment: Appointment): string {
+  return isSafePath(returnTo) ? returnTo : `/appointments/${appointment.id}`;
 }
 
 export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
-  // The agent picker + "my appointments" list.
-  app.get<{ Querystring: { agentId?: string } }>("/appointments", async (request, reply) => {
-    const agentId = Number(request.query.agentId);
-    const agent = agentId ? db.select().from(agents).where(eq(agents.id, agentId)).get() : undefined;
+  // The logged-in agent's "my appointments" list. Agents only.
+  app.get("/appointments", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
 
-    return renderAppointmentsIndex(reply, { agent });
+    const agent =
+      user.role === "agent" && user.agentId !== null
+        ? db.select().from(agents).where(eq(agents.id, user.agentId)).get()
+        : undefined;
+    if (!agent) {
+      return forbid(reply);
+    }
+
+    return renderAppointmentsIndex(reply, agent);
   });
 
   app.get<{ Params: { id: string } }>("/appointments/:id", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const appointment = findAppointment(Number(request.params.id));
     if (!appointment) {
       return renderNotFound(reply);
     }
+    if (!canView(user, appointment)) {
+      return forbid(reply);
+    }
 
-    return renderAppointmentShow(reply, appointment);
+    return renderAppointmentShow(reply, appointment, user);
   });
 
   // The therapist prescribes (or revises) a therapy and session notes. Allowed
@@ -259,9 +311,17 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
     Params: { id: string };
     Body: { therapyId?: string; notes?: string };
   }>("/appointments/:id/prescription", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const appointment = findAppointment(Number(request.params.id));
     if (!appointment) {
       return renderNotFound(reply);
+    }
+    if (!isTherapist(user, appointment.therapist.id)) {
+      return forbid(reply);
     }
 
     const { therapyId, notes } = request.body ?? {};
@@ -272,7 +332,7 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
       .get();
 
     if (!therapy) {
-      return renderAppointmentShow(reply, appointment, {
+      return renderAppointmentShow(reply, appointment, user, {
         code: 400,
         prescriptionError: "Pick a therapy to prescribe.",
         prescriptionForm: { therapyId, notes },
@@ -297,15 +357,23 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
     Params: { id: string };
     Body: { returnTo?: string };
   }>("/appointments/:id/cancel", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const appointment = findAppointment(Number(request.params.id));
     if (!appointment) {
       return renderNotFound(reply);
     }
+    if (!isAgent(user, appointment.agent.id)) {
+      return forbid(reply);
+    }
 
-    const returnTo = request.body?.returnTo || `/appointments/${appointment.id}`;
+    const returnTo = resolveReturnTo(request.body?.returnTo, appointment);
 
     if (!canCancelOrReschedule(appointment)) {
-      return renderActionError(reply, appointment, returnTo, "This appointment can no longer be changed.");
+      return renderActionError(reply, appointment, user, returnTo, "This appointment can no longer be changed.");
     }
 
     db.update(appointments).set({ status: "cancelled" }).where(eq(appointments.id, appointment.id)).run();
@@ -319,16 +387,24 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
     Params: { id: string };
     Body: { requestedAt?: string; returnTo?: string };
   }>("/appointments/:id/reschedule", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const appointment = findAppointment(Number(request.params.id));
     if (!appointment) {
       return renderNotFound(reply);
     }
+    if (!isAgent(user, appointment.agent.id)) {
+      return forbid(reply);
+    }
 
     const { requestedAt, returnTo: returnToInput } = request.body ?? {};
-    const returnTo = returnToInput || `/appointments/${appointment.id}`;
+    const returnTo = resolveReturnTo(returnToInput, appointment);
 
     if (!canCancelOrReschedule(appointment)) {
-      return renderActionError(reply, appointment, returnTo, "This appointment can no longer be changed.");
+      return renderActionError(reply, appointment, user, returnTo, "This appointment can no longer be changed.");
     }
 
     const rawTime = requestedAt?.trim() ?? "";
@@ -337,6 +413,7 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
       return renderActionError(
         reply,
         appointment,
+        user,
         returnTo,
         "Pick a valid date and time for the appointment.",
         requestedAt,
@@ -346,6 +423,7 @@ export async function appointmentRoutes(app: FastifyInstance): Promise<void> {
       return renderActionError(
         reply,
         appointment,
+        user,
         returnTo,
         "Pick a time in the future for the appointment.",
         requestedAt,

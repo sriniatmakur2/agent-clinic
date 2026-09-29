@@ -26,17 +26,20 @@
     >
       Meet the therapists
     </a>
-    <a
-      href="/appointments"
-      class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
-    >
-      My appointments
-    </a>
-    <a
-      href="/supervisors"
-      class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
-    >
-      Supervisor view
-    </a>
+    <% if (!currentUser) { %>
+      <a
+        href="/login"
+        class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
+      >
+        Log in
+      </a>
+    <% } else { %>
+      <a
+        href="<%= currentUser.homePath %>"
+        class="rounded-md border border-teal-700 bg-white px-5 py-2.5 font-medium text-teal-700 shadow-sm transition hover:bg-teal-50"
+      >
+        <%= currentUser.role === "agent" ? "My appointments" : "My dashboard" %>
+      </a>
+    <% } %>
   </div>
 </main>

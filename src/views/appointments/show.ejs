@@ -1,7 +1,5 @@
 <main class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-16">
-  <a href="/therapists/<%= appointment.therapist.id %>/appointments" class="text-sm text-teal-700 hover:underline">
-    &larr; Back to <%= appointment.therapist.name %>'s appointments
-  </a>
+  <a href="<%= backLink.href %>" class="text-sm text-teal-700 hover:underline">&larr; <%= backLink.label %></a>
 
   <div class="flex flex-col items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-6 py-8 text-center shadow-sm">
     <span class="text-4xl"><%= isPrescribed ? appointment.therapy.icon : "✅" %></span>
@@ -82,6 +80,7 @@
     <% } %>
   </dl>
 
+  <% if (showManage) { %>
   <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
     <h2 class="text-lg font-semibold text-slate-900">Manage your appointment</h2>
 
@@ -121,7 +120,9 @@
       <p class="text-sm text-slate-500">This appointment can no longer be changed.</p>
     <% } %>
   </section>
+  <% } %>
 
+  <% if (showPrescribe) { %>
   <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
     <h2 class="text-lg font-semibold text-slate-900">
       <%= isPrescribed ? "Revise the prescription" : "Prescribe a therapy" %>
@@ -162,4 +163,5 @@
       </button>
     </form>
   </section>
+  <% } %>
 </main>

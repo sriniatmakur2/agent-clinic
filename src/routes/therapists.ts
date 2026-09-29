@@ -11,31 +11,17 @@ import {
   therapistSpecialties,
 } from "../db/schema.js";
 import { createAppointment, formatAppointmentTime, getAilmentsByAgent } from "./appointments.js";
+import { type CurrentUser, forbid, isTherapist, requireLogin } from "../auth.js";
 
 type Therapist = typeof therapists.$inferSelect;
 
-// Only agents who have reported an ailment can book; those with an ailment
-// this therapist specializes in are listed first.
-function getBookableAgents(specialtyAilmentIds: number[]) {
-  const allAgents = db.select().from(agents).all();
-  const reported = db.select().from(agentAilments).all();
-
-  const withMatch = allAgents
-    .filter((agent) => reported.some((r) => r.agentId === agent.id))
-    .map((agent) => ({
-      ...agent,
-      matchesSpecialties: reported.some(
-        (r) => r.agentId === agent.id && specialtyAilmentIds.includes(r.ailmentId),
-      ),
-    }));
-
-  return [...withMatch.filter((a) => a.matchesSpecialties), ...withMatch.filter((a) => !a.matchesSpecialties)];
-}
-
+// Booking is for a logged-in agent, for themselves: the form has no agent
+// dropdown and only shows once the agent has reported an ailment.
 function renderTherapistShow(
   reply: FastifyReply,
   therapist: Therapist,
-  options: { code?: number; bookingError?: string; bookingForm?: { agentId?: string; requestedAt?: string } } = {},
+  viewer: CurrentUser | null,
+  options: { code?: number; bookingError?: string; bookingForm?: { requestedAt?: string } } = {},
 ) {
   const specialties = db
     .select({ id: ailments.id, name: ailments.name, description: ailments.description })
@@ -44,11 +30,18 @@ function renderTherapistShow(
     .where(eq(therapistSpecialties.therapistId, therapist.id))
     .all();
 
+  const viewerAgentId = viewer?.role === "agent" ? viewer.agentId : null;
+  const viewerHasAilment =
+    viewerAgentId !== null &&
+    db.select().from(agentAilments).where(eq(agentAilments.agentId, viewerAgentId)).get() !== undefined;
+
   return reply.code(options.code ?? 200).view("therapists/show.ejs", {
     title: `${therapist.name} — AgentClinic`,
     therapist,
     specialties,
-    bookableAgents: getBookableAgents(specialties.map((s) => s.id)),
+    isSelf: isTherapist(viewer, therapist.id),
+    viewerAgentId,
+    viewerHasAilment,
     bookingError: options.bookingError ?? null,
     bookingForm: options.bookingForm ?? {},
   });
@@ -84,12 +77,17 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    return renderTherapistShow(reply, therapist);
+    return renderTherapistShow(reply, therapist, request.currentUser);
   });
 
   // The therapist's dashboard: their appointments split into upcoming and past,
   // with each agent's reported ailments for context.
   app.get<{ Params: { id: string } }>("/therapists/:id/appointments", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const id = Number(request.params.id);
     const therapist = db.select().from(therapists).where(eq(therapists.id, id)).get();
 
@@ -97,6 +95,9 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(404).view("therapists/not-found.ejs", {
         title: "Therapist not found — AgentClinic",
       });
+    }
+    if (!isTherapist(user, therapist.id)) {
+      return forbid(reply);
     }
 
     const specialtyIds = db
@@ -143,10 +144,17 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
+  // Any agent can book with any therapist — always for themselves; the agent
+  // comes from the session, never from the form.
   app.post<{
     Params: { id: string };
-    Body: { agentId?: string; requestedAt?: string };
+    Body: { requestedAt?: string };
   }>("/therapists/:id/appointments", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const id = Number(request.params.id);
     const therapist = db.select().from(therapists).where(eq(therapists.id, id)).get();
 
@@ -155,15 +163,18 @@ export async function therapistRoutes(app: FastifyInstance): Promise<void> {
         title: "Therapist not found — AgentClinic",
       });
     }
+    if (user.role !== "agent" || user.agentId === null) {
+      return forbid(reply);
+    }
 
-    const { agentId, requestedAt } = request.body ?? {};
-    const result = createAppointment({ agentId: Number(agentId), therapistId: id, requestedAt });
+    const { requestedAt } = request.body ?? {};
+    const result = createAppointment({ agentId: user.agentId, therapistId: id, requestedAt });
 
     if ("error" in result) {
-      return renderTherapistShow(reply, therapist, {
+      return renderTherapistShow(reply, therapist, user, {
         code: 400,
         bookingError: result.error,
-        bookingForm: { agentId, requestedAt },
+        bookingForm: { requestedAt },
       });
     }
 

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { agents, ailments, agentAilments, therapists, therapistSpecialties } from "../db/schema.js";
 import { createAppointment } from "./appointments.js";
+import { type CurrentUser, forbid, isAgent, requireLogin } from "../auth.js";
 
 type Agent = typeof agents.$inferSelect;
 
@@ -30,9 +31,11 @@ function getBookableTherapists(agentAilmentIds: number[]) {
   return [...withMatch.filter((t) => t.matchesAilments), ...withMatch.filter((t) => !t.matchesAilments)];
 }
 
+// The report-ailment and booking forms only render on your own agent page.
 function renderAgentShow(
   reply: FastifyReply,
   agent: Agent,
+  viewer: CurrentUser | null,
   options: {
     code?: number;
     ailmentError?: string;
@@ -41,14 +44,16 @@ function renderAgentShow(
   } = {},
 ) {
   const reported = getAgentAilments(agent.id);
+  const isSelf = isAgent(viewer, agent.id);
 
   return reply.code(options.code ?? 200).view("agents/show.ejs", {
     title: `${agent.name} — AgentClinic`,
     agent,
+    isSelf,
     agentAilments: reported,
-    allAilments: db.select().from(ailments).all(),
+    allAilments: isSelf ? db.select().from(ailments).all() : [],
     error: options.ailmentError ?? null,
-    bookableTherapists: getBookableTherapists(reported.map((a) => a.id)),
+    bookableTherapists: isSelf ? getBookableTherapists(reported.map((a) => a.id)) : [],
     bookingError: options.bookingError ?? null,
     bookingForm: options.bookingForm ?? {},
   });
@@ -74,13 +79,18 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    return renderAgentShow(reply, agent);
+    return renderAgentShow(reply, agent, request.currentUser);
   });
 
   app.post<{
     Params: { id: string };
     Body: { ailmentId?: string; newAilmentName?: string; newAilmentDescription?: string };
   }>("/agents/:id/ailments", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const id = Number(request.params.id);
     const agent = db.select().from(agents).where(eq(agents.id, id)).get();
 
@@ -88,6 +98,9 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(404).view("agents/not-found.ejs", {
         title: "Agent not found — AgentClinic",
       });
+    }
+    if (!isAgent(user, agent.id)) {
+      return forbid(reply);
     }
 
     const { ailmentId, newAilmentName, newAilmentDescription } = request.body ?? {};
@@ -104,7 +117,7 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
     }
 
     if (!resolvedAilmentId) {
-      return renderAgentShow(reply, agent, {
+      return renderAgentShow(reply, agent, user, {
         code: 400,
         ailmentError: "Pick an ailment from the list, or describe a new one with both a name and a description.",
       });
@@ -116,10 +129,16 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.redirect(`/agents/${id}`);
   });
+
   app.post<{
     Params: { id: string };
     Body: { therapistId?: string; requestedAt?: string };
   }>("/agents/:id/appointments", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const id = Number(request.params.id);
     const agent = db.select().from(agents).where(eq(agents.id, id)).get();
 
@@ -128,12 +147,15 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
         title: "Agent not found — AgentClinic",
       });
     }
+    if (!isAgent(user, agent.id)) {
+      return forbid(reply);
+    }
 
     const { therapistId, requestedAt } = request.body ?? {};
     const result = createAppointment({ agentId: id, therapistId: Number(therapistId), requestedAt });
 
     if ("error" in result) {
-      return renderAgentShow(reply, agent, {
+      return renderAgentShow(reply, agent, user, {
         code: 400,
         bookingError: result.error,
         bookingForm: { therapistId, requestedAt },

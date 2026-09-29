@@ -3,54 +3,32 @@
 
   <div class="rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
     <h1 class="text-2xl font-bold tracking-tight text-slate-900">My appointments</h1>
-    <p class="text-sm text-slate-600">Pick an agent to see their appointments.</p>
-
-    <form method="GET" action="/appointments" class="mt-4 flex gap-2">
-      <select
-        name="agentId"
-        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
-      >
-        <option value="">Select an agent&hellip;</option>
-        <% allAgents.forEach((a) => { %>
-          <option value="<%= a.id %>" <%= agent && agent.id === a.id ? "selected" : "" %>>
-            <%= a.avatarEmoji %> <%= a.name %>
-          </option>
-        <% }) %>
-      </select>
-      <button
-        type="submit"
-        class="shrink-0 rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-      >
-        View
-      </button>
-    </form>
+    <p class="text-sm text-slate-600"><%= agent.avatarEmoji %> <%= agent.name %>'s upcoming and past sessions.</p>
   </div>
 
-  <% if (agent) { %>
-    <section class="flex flex-col gap-3">
-      <h2 class="text-lg font-semibold text-slate-900">Upcoming</h2>
-      <% if (upcoming.length === 0) { %>
-        <p class="text-sm text-slate-500">No upcoming appointments.</p>
-      <% } else { %>
-        <ul class="flex flex-col gap-3">
-          <% upcoming.forEach((appointment) => { %>
-            <%- include("_row", { appointment, agent, rowError, rescheduleForm }) %>
-          <% }) %>
-        </ul>
-      <% } %>
-    </section>
+  <section class="flex flex-col gap-3">
+    <h2 class="text-lg font-semibold text-slate-900">Upcoming</h2>
+    <% if (upcoming.length === 0) { %>
+      <p class="text-sm text-slate-500">No upcoming appointments.</p>
+    <% } else { %>
+      <ul class="flex flex-col gap-3">
+        <% upcoming.forEach((appointment) => { %>
+          <%- include("_row", { appointment, rowError, rescheduleForm }) %>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
 
-    <section class="flex flex-col gap-3">
-      <h2 class="text-lg font-semibold text-slate-900">Past</h2>
-      <% if (past.length === 0) { %>
-        <p class="text-sm text-slate-500">No past appointments.</p>
-      <% } else { %>
-        <ul class="flex flex-col gap-3">
-          <% past.forEach((appointment) => { %>
-            <%- include("_row", { appointment, agent, rowError, rescheduleForm }) %>
-          <% }) %>
-        </ul>
-      <% } %>
-    </section>
-  <% } %>
+  <section class="flex flex-col gap-3">
+    <h2 class="text-lg font-semibold text-slate-900">Past</h2>
+    <% if (past.length === 0) { %>
+      <p class="text-sm text-slate-500">No past appointments.</p>
+    <% } else { %>
+      <ul class="flex flex-col gap-3">
+        <% past.forEach((appointment) => { %>
+          <%- include("_row", { appointment, rowError, rescheduleForm }) %>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
 </main>

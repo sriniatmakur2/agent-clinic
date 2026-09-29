@@ -1,0 +1,52 @@
+<main class="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
+  <a href="/" class="text-sm text-teal-700 hover:underline">&larr; Back home</a>
+
+  <div class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <h1 class="text-2xl font-bold tracking-tight text-slate-900">Log in</h1>
+
+    <% if (error) { %>
+      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= error %></p>
+    <% } %>
+
+    <form method="POST" action="/login" class="flex flex-col gap-3">
+      <input type="hidden" name="next" value="<%= next %>" />
+
+      <label class="text-sm font-medium text-slate-700" for="username">Username</label>
+      <input
+        id="username"
+        name="username"
+        type="text"
+        autocomplete="username"
+        value="<%= username %>"
+        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+      />
+
+      <label class="text-sm font-medium text-slate-700" for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+      />
+
+      <button
+        type="submit"
+        class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+      >
+        Log in
+      </button>
+    </form>
+  </div>
+
+  <div class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100 px-6 py-4 text-sm text-slate-600">
+    <p class="font-semibold text-slate-700">Demo accounts</p>
+    <p>Every account's password is <code class="font-mono text-slate-900"><%= demoPassword %></code>.</p>
+    <% demoAccounts.forEach((group) => { %>
+      <p>
+        <span class="font-medium text-slate-700"><%= group.label %>:</span>
+        <span class="font-mono"><%= group.usernames.join(", ") %></span>
+      </p>
+    <% }) %>
+  </div>
+</main>

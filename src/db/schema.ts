@@ -66,6 +66,19 @@ export const therapistSpecialties = sqliteTable("therapist_specialties", {
     .references(() => ailments.id),
 });
 
+// A login. Each user has exactly one role and links to exactly one agent,
+// therapist, or supervisor row — the FK matching `role` is set, the others null.
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username").notNull().unique(),
+  // scrypt, stored as "salt:hash" (hex) — see src/auth.ts.
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull(),
+  agentId: integer("agent_id").references(() => agents.id),
+  therapistId: integer("therapist_id").references(() => therapists.id),
+  supervisorId: integer("supervisor_id").references(() => supervisors.id),
+});
+
 // An agent's request for a session with a therapist. Starts as "requested"
 // with therapyId/notes/prescribedAt null; the therapist prescribing a therapy
 // moves it to "prescribed" (and can revise the prescription afterwards).

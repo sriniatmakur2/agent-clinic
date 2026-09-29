@@ -3,28 +3,30 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { agents, supervisors } from "../db/schema.js";
 import { buildAgentAppointmentRows, getAilmentsByAgent } from "./appointments.js";
+import { forbid, requireLogin } from "../auth.js";
 
 export async function supervisorRoutes(app: FastifyInstance): Promise<void> {
-  // The supervisor picker: no standalone browse/detail pages, just a list of
-  // links straight into each supervisor's dashboard.
-  app.get("/supervisors", async (_request, reply) => {
-    const allSupervisors = db.select().from(supervisors).all();
-    const allAgents = db.select().from(agents).all();
+  // No picker any more: a supervisor goes straight to their own dashboard.
+  app.get("/supervisors", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+    if (user.role !== "supervisor") {
+      return forbid(reply);
+    }
 
-    const withCounts = allSupervisors.map((supervisor) => ({
-      ...supervisor,
-      agentCount: allAgents.filter((a) => a.supervisorId === supervisor.id).length,
-    }));
-
-    return reply.view("supervisors/index.ejs", {
-      title: "Supervisors — AgentClinic",
-      supervisors: withCounts,
-    });
+    return reply.redirect(user.homePath);
   });
 
   // The dashboard: each supervised agent's ailments and full appointment
   // history (read-only — the manage controls are agent-side actions).
   app.get<{ Params: { id: string } }>("/supervisors/:id", async (request, reply) => {
+    const user = requireLogin(request, reply);
+    if (!user) {
+      return reply;
+    }
+
     const id = Number(request.params.id);
     const supervisor = db.select().from(supervisors).where(eq(supervisors.id, id)).get();
 
@@ -32,6 +34,9 @@ export async function supervisorRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(404).view("supervisors/not-found.ejs", {
         title: "Supervisor not found — AgentClinic",
       });
+    }
+    if (user.role !== "supervisor" || user.supervisorId !== supervisor.id) {
+      return forbid(reply);
     }
 
     const supervisedAgents = db.select().from(agents).where(eq(agents.supervisorId, supervisor.id)).all();

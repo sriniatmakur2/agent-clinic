@@ -9,7 +9,9 @@ import {
   therapies,
   therapists,
   therapistSpecialties,
+  users,
 } from "./schema.js";
+import { DEMO_PASSWORD, hashPassword } from "../auth.js";
 
 const SEED_AGENTS = [
   {
@@ -414,6 +416,66 @@ function seedAppointments(): void {
   console.log(`Seeded ${rows.length} appointments.`);
 }
 
+// One login per seeded agent, therapist, and supervisor, looked up by name.
+function seedUsers(): void {
+  const existing = db.select().from(users).all();
+  if (existing.length > 0) {
+    console.log(`Skipping user seed: users table already has ${existing.length} row(s).`);
+    return;
+  }
+
+  const allAgents = db.select().from(agents).all();
+  const allTherapists = db.select().from(therapists).all();
+  const allSupervisors = db.select().from(supervisors).all();
+
+  const agentLogins = [
+    { username: "ava", name: "Ava" },
+    { username: "percy", name: "Percy" },
+    { username: "ledger", name: "Ledger" },
+    { username: "nova", name: "Nova" },
+    { username: "hank", name: "Hank" },
+  ];
+  const therapistLogins = [
+    { username: "ada", name: "Dr. Ada Backprop" },
+    { username: "tokenia", name: "Dr. Tokenia Window" },
+    { username: "grace", name: "Dr. Guardrail Grace" },
+    { username: "retry", name: "Dr. Retry Backoff" },
+  ];
+  const supervisorLogins = [
+    { username: "marge", name: "Marge Overwatch" },
+    { username: "dale", name: "Dale Uptime" },
+    { username: "priya", name: "Priya Standup" },
+  ];
+
+  const rows = [
+    ...agentLogins.map(({ username, name }) => ({
+      username,
+      role: "agent",
+      agentId: allAgents.find((a) => a.name === name)?.id,
+    })),
+    ...therapistLogins.map(({ username, name }) => ({
+      username,
+      role: "therapist",
+      therapistId: allTherapists.find((t) => t.name === name)?.id,
+    })),
+    ...supervisorLogins.map(({ username, name }) => ({
+      username,
+      role: "supervisor",
+      supervisorId: allSupervisors.find((s) => s.name === name)?.id,
+    })),
+  ].filter((row) => ("agentId" in row ? row.agentId : "therapistId" in row ? row.therapistId : row.supervisorId));
+
+  if (rows.length === 0) {
+    console.log("Skipping user seed: no matching agent/therapist/supervisor names found.");
+    return;
+  }
+
+  db.insert(users)
+    .values(rows.map((row) => ({ ...row, passwordHash: hashPassword(DEMO_PASSWORD) })))
+    .run();
+  console.log(`Seeded ${rows.length} users (password "${DEMO_PASSWORD}").`);
+}
+
 export function seed(): void {
   seedAgents();
   seedSupervisors();
@@ -424,6 +486,7 @@ export function seed(): void {
   seedTherapists();
   seedTherapistSpecialties();
   seedAppointments();
+  seedUsers();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

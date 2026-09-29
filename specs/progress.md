@@ -413,10 +413,118 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
   `supervisorId` column instead of a join table, no standalone
   browse/detail pages for supervisors).
 
+## Phase 9 — Auth & roles: DONE
+
+- Not committed yet (commit hash to be recorded once the user asks for
+  the commit).
+- Implemented from `specs/phase-9-plan.md`, including its "Decisions I'm
+  proposing" section, which the user approved as written.
+- New deps: `@fastify/cookie` 11 and `@fastify/session` 11. The session
+  store is the default in-memory one, so a server restart (including a
+  `tsx watch` reload) logs everyone out. `saveUninitialized: false`. The
+  cookie is httpOnly, `sameSite: "lax"`, and not `secure` (local http).
+  The secret comes from `SESSION_SECRET`, with a ≥32-character dev
+  fallback in `src/app.ts`.
+- New `users` table (`username` unique, `passwordHash`, free-text `role`,
+  nullable `agentId`/`therapistId`/`supervisorId` FKs; exactly one is set,
+  matching the role). Migration `drizzle/0008_melodic_sersi.sql`.
+- `src/auth.ts` (new) holds everything auth-related:
+  - Password helpers: scrypt, stored as `salt:hash` in hex. Hashing uses
+    `scryptSync` (seed script only); verification is async and uses
+    `timingSafeEqual`.
+  - Fastify type augmentation for `session.userId`,
+    `request.currentUser`, and `reply.locals`.
+  - The `loadCurrentUser` preHandler, which puts `currentUser`
+    (`displayName`, `homePath`, and the linked ids) on the request and in
+    `reply.locals`. `@fastify/view` merges that into every view,
+    including the layout.
+  - The guards `requireLogin`, `forbid`, and `isSafePath`, and the
+    predicates `isAgent`, `isTherapist`, and `isSupervisorOf`.
+- Access control is explicit per route, not a global hook. Every guarded
+  handler checks in the same order: login first, then 404 for an unknown
+  id, then 403 (`forbidden.ejs`). So logged-out users never learn which
+  ids exist, and a logged-in user sees 404 before 403.
+- `src/routes/auth.ts` (new) handles login and logout:
+  - `GET /login` redirects to your dashboard if you're already logged in.
+  - `POST /login` returns 400 with one generic error and keeps the
+    username. On success it regenerates the session and redirects to a
+    safe `next` or to the role's home.
+  - `POST /logout` destroys the session.
+- Seed: `seedUsers()` adds 12 demo logins (5 agents: ava, percy, ledger,
+  nova, hank; 4 therapists: ada, tokenia, grace, retry; 3 supervisors:
+  marge, dale, priya). The password is `clinic` (`DEMO_PASSWORD` in
+  `src/auth.ts`), and the login page lists all of them. Same
+  skip-if-non-empty idempotency as the other seeds.
+- Role behaviour, now that identity comes from the session:
+  - The Phase 7 agent picker and the therapist-page agent dropdown are
+    gone.
+  - `GET /appointments` shows the logged-in agent's own list.
+  - Booking from a therapist's page books for the logged-in agent and
+    ignores any submitted `agentId`.
+  - `GET /supervisors` redirects a supervisor to their own dashboard.
+  - The agent-page forms, therapist "View appointments" links, and the
+    manage/prescribe sections on appointment pages only render for the
+    user allowed to use them.
+  - Public browse pages stay public.
+- Views: a new `login.ejs` and `forbidden.ejs`. `layout.ejs` gained a top
+  bar ("Logged in as X (role) · Log out", or a "Log in" link). The home
+  page buttons now point to Log in or to "My appointments" / "My
+  dashboard". The appointment page's back link goes to the viewer's own
+  dashboard.
+- Verified with `npm run dev`, curl with per-role cookie jars, and
+  sqlite3:
+  - Setup: migrate, then seed, then seed again (the users skip path
+    works). The DB has 12 users with 161-character hashes and no
+    plaintext password stored.
+  - Every row of the plan's access-control table was checked while logged
+    out (GETs redirect to `/login?next=…`, POSTs to `/login`) and as each
+    role: agent (ava), therapist (ada), and all 3 supervisors. That
+    covers the 200/302/403/404 outcomes, cross-user 403s (another agent's
+    appointment, another therapist's dashboard, another supervisor's
+    dashboard, prescribing someone else's appointment), and that
+    forms/links are hidden for the wrong viewer.
+  - Login: `next` round-trips. Off-site `next` values (`//evil.com`,
+    `https://…`, `/\evil.com`) fall back to home. A bad password or
+    unknown user returns 400. Usernames are case-insensitive. The cookie
+    flags are correct.
+  - Logout and forged cookies: after logout the old cookie is rejected,
+    and a forged cookie is treated as logged out.
+  - Booking: a logged-in agent books for themself; a submitted `agentId`
+    is ignored.
+  - The no-ailment gate still holds, both hidden in the view and a 400
+    on a forced POST. Tested by temporarily clearing Ledger's ailments;
+    every local agent has some.
+  - Existing flows (report ailment, book, prescribe, cancel, reschedule)
+    still work for the right role.
+  - No errors in the server log. `npm run lint` and `tsc --noEmit` are
+    clean.
+  - Test data was removed by restoring a pre-test DB snapshot (seeded
+    users included). No browser click-through by Claude, so a quick
+    manual look is worthwhile.
+
+### Deviations from the specs
+
+- **Hardening beyond the plan:** the cancel/reschedule `returnTo` field
+  is now checked with `isSafePath`, the same check as the login `next`.
+  Before, it was an unchecked redirect target. It only ever renders
+  `/appointments` or `/appointments/:id` now.
+- A logged-out **POST** redirects to `/login` without `next`, because a
+  form POST can't be replayed after login. Logged-out GETs do keep
+  `next`.
+- `src/views/supervisors/index.ejs` (the Phase 8 picker) was deleted,
+  since `GET /supervisors` now only redirects.
+- The layout's top bar gives every page a link home, which covers most of
+  the Phase 11 backlog item as a side effect. Phase 11 is still listed in
+  the roadmap; decide there whether an explicit per-page back link is
+  still wanted.
+- Login lowercases and trims the username, so `Ava` works.
+- The forbidden page's "Log in as someone else" is a logout button,
+  because logout is a POST.
+
 ## Next phase
 
-Phase 9 — Auth & roles. See `specs/roadmap.md` for its scope.
+Phase 10 — Visual polish. See `specs/roadmap.md` for its scope.
 
-Backlog note: Phase 11 (navigation back to home from the list pages —
-now `/agents`, `/therapies`, and `/therapists`) is in `specs/roadmap.md`,
-to be tackled separately — it doesn't change the order above.
+Backlog note: Phase 11 (navigation back to home from the list pages) is
+still in `specs/roadmap.md`. Phase 9's layout top bar now links to `/` on
+every page, so check whether anything is left for Phase 11 before doing it.

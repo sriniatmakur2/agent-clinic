@@ -40,7 +40,7 @@
   <% if (appointment.canManage) { %>
     <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
       <form method="POST" action="/appointments/<%= appointment.id %>/cancel">
-        <input type="hidden" name="returnTo" value="/appointments?agentId=<%= agent.id %>" />
+        <input type="hidden" name="returnTo" value="/appointments" />
         <button
           type="submit"
           class="rounded-md border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50"
@@ -50,7 +50,7 @@
       </form>
 
       <form method="POST" action="/appointments/<%= appointment.id %>/reschedule" class="flex items-center gap-2">
-        <input type="hidden" name="returnTo" value="/appointments?agentId=<%= agent.id %>" />
+        <input type="hidden" name="returnTo" value="/appointments" />
         <input
           type="datetime-local"
           name="requestedAt"

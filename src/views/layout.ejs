@@ -7,6 +7,22 @@
     <link rel="stylesheet" href="/public/css/output.css" />
   </head>
   <body class="min-h-screen bg-slate-50 text-slate-900">
+    <header class="border-b border-slate-200 bg-white">
+      <div class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-2 text-sm">
+        <a href="/" class="font-semibold text-teal-700 hover:underline">AgentClinic</a>
+        <% if (typeof currentUser !== "undefined" && currentUser) { %>
+          <div class="flex items-center gap-2 text-slate-600">
+            <span>Logged in as <%= currentUser.displayName %> (<%= currentUser.role %>)</span>
+            <span aria-hidden="true">&middot;</span>
+            <form method="POST" action="/logout">
+              <button type="submit" class="font-medium text-teal-700 hover:underline">Log out</button>
+            </form>
+          </div>
+        <% } else { %>
+          <a href="/login" class="font-medium text-teal-700 hover:underline">Log in</a>
+        <% } %>
+      </div>
+    </header>
     <%- body %>
   </body>
 </html>

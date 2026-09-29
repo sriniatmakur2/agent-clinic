@@ -1,5 +1,5 @@
 <main class="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-16">
-  <a href="/supervisors" class="text-sm text-teal-700 hover:underline">&larr; Back to supervisors</a>
+  <a href="/" class="text-sm text-teal-700 hover:underline">&larr; Back home</a>
 
   <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
     <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-teal-50 text-3xl">
@@ -50,7 +50,7 @@
           <% } else { %>
             <ul class="flex flex-col gap-3">
               <% section.upcoming.forEach((appointment) => { %>
-                <%- include("../appointments/_row", { appointment, agent: section.agent, rowError: null, rescheduleForm: null }) %>
+                <%- include("../appointments/_row", { appointment, rowError: null, rescheduleForm: null }) %>
               <% }) %>
             </ul>
           <% } %>
@@ -63,7 +63,7 @@
           <% } else { %>
             <ul class="flex flex-col gap-3">
               <% section.past.forEach((appointment) => { %>
-                <%- include("../appointments/_row", { appointment, agent: section.agent, rowError: null, rescheduleForm: null }) %>
+                <%- include("../appointments/_row", { appointment, rowError: null, rescheduleForm: null }) %>
               <% }) %>
             </ul>
           <% } %>
