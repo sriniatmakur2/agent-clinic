@@ -522,7 +522,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 10 — Visual polish: DONE
 
-- Commit: _pending_ (not committed yet; fill in the hash once it is).
+- Commit: `6508a4c` ("Phase 10: visual polish") on `main`.
 - Plan: `specs/phase-10-plan.md` (approved as written).
 - No schema, route, or behaviour changes. Every form field name, action,
   hidden `returnTo`, and status code is the same as in Phase 9.
