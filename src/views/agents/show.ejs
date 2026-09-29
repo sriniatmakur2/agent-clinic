@@ -88,4 +88,49 @@
       </button>
     </form>
   </div>
+
+  <div class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">Book an appointment</h2>
+
+    <% if (bookingError) { %>
+      <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= bookingError %></p>
+    <% } %>
+
+    <% if (agentAilments.length === 0) { %>
+      <p class="text-sm text-slate-500">Report an ailment first, so a therapist knows what you need help with.</p>
+    <% } else { %>
+
+      <form method="POST" action="/agents/<%= agent.id %>/appointments" class="flex flex-col gap-3">
+        <label class="text-sm font-medium text-slate-700" for="therapistId">Therapist</label>
+        <select
+          id="therapistId"
+          name="therapistId"
+          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+        >
+          <option value="">Select a therapist&hellip;</option>
+          <% bookableTherapists.forEach((therapist) => { %>
+            <option value="<%= therapist.id %>" <%= String(therapist.id) === bookingForm.therapistId ? "selected" : "" %>>
+              <%= therapist.avatarEmoji %> <%= therapist.name %><%= therapist.matchesAilments ? " — specializes in your ailments" : "" %>
+            </option>
+          <% }) %>
+        </select>
+
+        <label class="text-sm font-medium text-slate-700" for="requestedAt">Requested time</label>
+        <input
+          id="requestedAt"
+          name="requestedAt"
+          type="datetime-local"
+          value="<%= bookingForm.requestedAt ?? "" %>"
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        />
+
+        <button
+          type="submit"
+          class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+        >
+          Book appointment
+        </button>
+      </form>
+    <% } %>
+  </div>
 </main>

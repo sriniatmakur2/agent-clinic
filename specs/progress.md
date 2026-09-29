@@ -191,9 +191,64 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 - Specialty-as-ailment-link (see above), decided with the user.
 
+## Phase 5 — Book an appointment: DONE
+
+- Commit: _not yet committed_ (fill in the hash once committed).
+- Decisions made with the user before implementation:
+  - Booking form on **both** the agent and therapist detail pages.
+  - An agent must have reported at least one ailment to book (the form
+    is hidden on the agent page otherwise; the server enforces it too).
+  - Requested time is a `datetime-local` input and must be in the future.
+  - The therapist dropdown (agent page) lists all therapists, with those
+    whose specialties match the agent's ailments first, marked "specializes
+    in your ailments". The agent dropdown (therapist page) lists only
+    agents with ≥1 ailment, with those matching the therapist's
+    specialties first.
+- `appointments` table (`agentId`, `therapistId`, `requestedAt`,
+  `status` default `"requested"`, nullable `therapyId` → therapies,
+  `createdAt`) added to `src/db/schema.ts`. Migration
+  `drizzle/0005_pale_wrecking_crew.sql`, applied on server start. No seed
+  appointments — nothing lists appointments until Phase 6/7.
+- `src/routes/appointments.ts`: `createAppointment()` (shared validation +
+  insert: agent/therapist exist, agent has an ailment, time valid and in
+  the future; returns `{ id }` or `{ error }`), `formatAppointmentTime()`,
+  and `GET /appointments/:id` (confirmation page; 404 via
+  `appointments/not-found.ejs`). Registered in `src/app.ts`.
+- The two POST endpoints live next to the page they re-render on error:
+  `POST /agents/:id/appointments` in `src/routes/agents.ts` and
+  `POST /therapists/:id/appointments` in `src/routes/therapists.ts`. Both
+  call `createAppointment()`, 302 to `/appointments/:id` on success, and
+  400 with an inline error (and the submitted values kept) otherwise. The
+  plan had these routes in `appointments.ts`; moved to keep each page's
+  render helper private to its own route file.
+- Agent/therapist detail rendering is now centralised in
+  `renderAgentShow()` / `renderTherapistShow()` helpers (the agent page
+  renders from three places: GET, ailment 400, booking 400). The ailment
+  form's error variable is still `error`; the booking one is
+  `bookingError`, so each shows in its own section.
+- Times: `datetime-local` has no offset, so it's parsed as server-local
+  time, stored as ISO/UTC, and displayed back in server-local time. Fine
+  while the app is local-only.
+- Verified with `npm run dev` + `curl` + `sqlite3`: both endpoints book and
+  302 to a 200 confirmation page; therapist/agent match ordering checked
+  against the DB; 400s for past, garbage and missing time, missing/unknown
+  therapist or agent, and empty body; the no-ailment gate on both
+  endpoints, the hidden form, and exclusion from the therapist dropdown
+  (via a temporary agent, deleted afterwards); 404s for unknown agent or
+  therapist POSTs and for `/appointments/999` and `/appointments/abc`; the
+  ailment form 400 still works; every existing page still 200.
+  `npm run lint` and `tsc --noEmit` clean. The local dev DB keeps the two
+  test appointments. No browser click-through by Claude — worth a quick
+  manual look.
+
+### Deviations from the specs
+
+- None beyond the route placement noted above.
+
 ## Next phase
 
-Phase 5 — Book an appointment. See `specs/roadmap.md` for its scope.
+Phase 6 — Therapist view & prescribing. See `specs/roadmap.md` for its
+scope. The `appointments.therapyId` column it will set already exists.
 
 Backlog note: Phase 11 (navigation back to home from the list pages —
 now `/agents`, `/therapies`, and `/therapists`) is in `specs/roadmap.md`,

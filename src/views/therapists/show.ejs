@@ -24,4 +24,49 @@
       </ul>
     <% } %>
   </section>
+
+  <section class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-6 py-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">Book an appointment</h2>
+
+    <% if (bookableAgents.length === 0) { %>
+      <p class="text-sm text-slate-500">No agents have reported an ailment yet, so there's no one to book.</p>
+    <% } else { %>
+      <% if (bookingError) { %>
+        <p class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"><%= bookingError %></p>
+      <% } %>
+
+      <form method="POST" action="/therapists/<%= therapist.id %>/appointments" class="flex flex-col gap-3">
+        <label class="text-sm font-medium text-slate-700" for="agentId">Agent</label>
+        <select
+          id="agentId"
+          name="agentId"
+          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+        >
+          <option value="">Select an agent&hellip;</option>
+          <% bookableAgents.forEach((agent) => { %>
+            <option value="<%= agent.id %>" <%= String(agent.id) === bookingForm.agentId ? "selected" : "" %>>
+              <%= agent.avatarEmoji %> <%= agent.name %><%= agent.matchesSpecialties ? " — has an ailment I specialize in" : "" %>
+            </option>
+          <% }) %>
+        </select>
+        <p class="text-xs text-slate-500">Only agents who have reported an ailment can book.</p>
+
+        <label class="text-sm font-medium text-slate-700" for="requestedAt">Requested time</label>
+        <input
+          id="requestedAt"
+          name="requestedAt"
+          type="datetime-local"
+          value="<%= bookingForm.requestedAt ?? "" %>"
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        />
+
+        <button
+          type="submit"
+          class="self-start rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+        >
+          Book appointment
+        </button>
+      </form>
+    <% } %>
+  </section>
 </main>

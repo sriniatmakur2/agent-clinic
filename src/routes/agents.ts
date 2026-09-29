@@ -1,7 +1,10 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { agents, ailments, agentAilments } from "../db/schema.js";
+import { agents, ailments, agentAilments, therapists, therapistSpecialties } from "../db/schema.js";
+import { createAppointment } from "./appointments.js";
+
+type Agent = typeof agents.$inferSelect;
 
 function getAgentAilments(agentId: number) {
   return db
@@ -10,6 +13,45 @@ function getAgentAilments(agentId: number) {
     .innerJoin(ailments, eq(agentAilments.ailmentId, ailments.id))
     .where(eq(agentAilments.agentId, agentId))
     .all();
+}
+
+// All therapists, with those who specialize in one of the agent's ailments listed first.
+function getBookableTherapists(agentAilmentIds: number[]) {
+  const allTherapists = db.select().from(therapists).all();
+  const specialties = db.select().from(therapistSpecialties).all();
+
+  const withMatch = allTherapists.map((therapist) => ({
+    ...therapist,
+    matchesAilments: specialties.some(
+      (s) => s.therapistId === therapist.id && agentAilmentIds.includes(s.ailmentId),
+    ),
+  }));
+
+  return [...withMatch.filter((t) => t.matchesAilments), ...withMatch.filter((t) => !t.matchesAilments)];
+}
+
+function renderAgentShow(
+  reply: FastifyReply,
+  agent: Agent,
+  options: {
+    code?: number;
+    ailmentError?: string;
+    bookingError?: string;
+    bookingForm?: { therapistId?: string; requestedAt?: string };
+  } = {},
+) {
+  const reported = getAgentAilments(agent.id);
+
+  return reply.code(options.code ?? 200).view("agents/show.ejs", {
+    title: `${agent.name} — AgentClinic`,
+    agent,
+    agentAilments: reported,
+    allAilments: db.select().from(ailments).all(),
+    error: options.ailmentError ?? null,
+    bookableTherapists: getBookableTherapists(reported.map((a) => a.id)),
+    bookingError: options.bookingError ?? null,
+    bookingForm: options.bookingForm ?? {},
+  });
 }
 
 export async function agentRoutes(app: FastifyInstance): Promise<void> {
@@ -32,13 +74,7 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    return reply.view("agents/show.ejs", {
-      title: `${agent.name} — AgentClinic`,
-      agent,
-      agentAilments: getAgentAilments(id),
-      allAilments: db.select().from(ailments).all(),
-      error: null,
-    });
+    return renderAgentShow(reply, agent);
   });
 
   app.post<{
@@ -68,12 +104,9 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
     }
 
     if (!resolvedAilmentId) {
-      return reply.code(400).view("agents/show.ejs", {
-        title: `${agent.name} — AgentClinic`,
-        agent,
-        agentAilments: getAgentAilments(id),
-        allAilments: db.select().from(ailments).all(),
-        error: "Pick an ailment from the list, or describe a new one with both a name and a description.",
+      return renderAgentShow(reply, agent, {
+        code: 400,
+        ailmentError: "Pick an ailment from the list, or describe a new one with both a name and a description.",
       });
     }
 
@@ -82,5 +115,31 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
       .run();
 
     return reply.redirect(`/agents/${id}`);
+  });
+  app.post<{
+    Params: { id: string };
+    Body: { therapistId?: string; requestedAt?: string };
+  }>("/agents/:id/appointments", async (request, reply) => {
+    const id = Number(request.params.id);
+    const agent = db.select().from(agents).where(eq(agents.id, id)).get();
+
+    if (!agent) {
+      return reply.code(404).view("agents/not-found.ejs", {
+        title: "Agent not found — AgentClinic",
+      });
+    }
+
+    const { therapistId, requestedAt } = request.body ?? {};
+    const result = createAppointment({ agentId: id, therapistId: Number(therapistId), requestedAt });
+
+    if ("error" in result) {
+      return renderAgentShow(reply, agent, {
+        code: 400,
+        bookingError: result.error,
+        bookingForm: { therapistId, requestedAt },
+      });
+    }
+
+    return reply.redirect(`/appointments/${result.id}`);
   });
 }

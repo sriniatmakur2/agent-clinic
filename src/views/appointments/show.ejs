@@ -1,0 +1,44 @@
+<main class="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-16">
+  <div class="flex flex-col items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-6 py-8 text-center shadow-sm">
+    <span class="text-4xl">&#x2705;</span>
+    <h1 class="text-2xl font-bold tracking-tight text-slate-900">Appointment requested</h1>
+    <p class="text-slate-600">
+      <%= appointment.agent.name %> is booked in with <%= appointment.therapist.name %>.
+    </p>
+  </div>
+
+  <dl class="flex flex-col divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white px-6 shadow-sm">
+    <div class="flex items-center justify-between gap-4 py-4">
+      <dt class="text-sm font-medium text-slate-500">Agent</dt>
+      <dd>
+        <a href="/agents/<%= appointment.agent.id %>" class="font-medium text-teal-700 hover:underline">
+          <%= appointment.agent.avatarEmoji %> <%= appointment.agent.name %>
+        </a>
+      </dd>
+    </div>
+    <div class="flex items-center justify-between gap-4 py-4">
+      <dt class="text-sm font-medium text-slate-500">Therapist</dt>
+      <dd>
+        <a href="/therapists/<%= appointment.therapist.id %>" class="font-medium text-teal-700 hover:underline">
+          <%= appointment.therapist.avatarEmoji %> <%= appointment.therapist.name %>
+        </a>
+      </dd>
+    </div>
+    <div class="flex items-center justify-between gap-4 py-4">
+      <dt class="text-sm font-medium text-slate-500">Requested time</dt>
+      <dd class="text-right text-slate-900"><%= requestedAtLabel %></dd>
+    </div>
+    <div class="flex items-center justify-between gap-4 py-4">
+      <dt class="text-sm font-medium text-slate-500">Status</dt>
+      <dd>
+        <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
+          <%= appointment.status %>
+        </span>
+      </dd>
+    </div>
+    <div class="flex items-center justify-between gap-4 py-4">
+      <dt class="text-sm font-medium text-slate-500">Therapy</dt>
+      <dd class="text-right text-slate-500">To be prescribed by your therapist</dd>
+    </div>
+  </dl>
+</main>

@@ -9,6 +9,7 @@ import { homeRoutes } from "./routes/home.js";
 import { agentRoutes } from "./routes/agents.js";
 import { therapyRoutes } from "./routes/therapies.js";
 import { therapistRoutes } from "./routes/therapists.js";
+import { appointmentRoutes } from "./routes/appointments.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -32,6 +33,7 @@ export function buildApp(): FastifyInstance {
   app.register(agentRoutes);
   app.register(therapyRoutes);
   app.register(therapistRoutes);
+  app.register(appointmentRoutes);
 
   return app;
 }
