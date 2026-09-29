@@ -11,6 +11,7 @@
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css --minify",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

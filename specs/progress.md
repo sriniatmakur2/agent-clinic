@@ -38,13 +38,44 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
   Only relevant again if `node_modules` is wiped and reinstalled from
   scratch.
 
-## Phase 1 — Browse agents: NOT STARTED
+## Phase 1 — Browse agents: DONE
+
+- Commit: not yet committed — awaiting explicit request per `CLAUDE.md`.
+- `agents` table added to `src/db/schema.ts` (`name`, `role`, `bio`,
+  `avatarEmoji`). Migration `drizzle/0001_ambitious_nick_fury.sql`,
+  applied automatically on server start like `boot_log`.
+- Seed data via a one-off script, `src/db/seed.ts` (`npm run db:seed`) —
+  5 fictional AI agents. Idempotent: skips inserting if the table is
+  non-empty, so it's safe to re-run.
+- Avatars render as an emoji badge (`avatarEmoji` column), not an image
+  — decided with the user to avoid introducing image assets/uploads
+  this phase.
+- Routes in `src/routes/agents.ts`: `GET /agents` (list) and
+  `GET /agents/:id` (detail, 404s via `agents/not-found.ejs` if the id
+  doesn't exist). Registered in `src/app.ts`.
+- Views: `src/views/agents/index.ejs`, `show.ejs`, `not-found.ejs`.
+  Home page (`src/views/home.ejs`) got a "Meet the agents" link so the
+  app is click-through navigable end to end.
+- Verified: `npm run db:generate` + `db:migrate` + `db:seed` (and
+  re-ran `db:seed` to confirm the no-op path); `curl`'d `/agents`,
+  `/agents/:id`, and a missing id (200/200/404); clicked through from
+  `/` in the browser. `npm run lint` and `tsc --noEmit` both clean.
+
+### Deviations from the specs
+
+- None beyond the two points already called out above (emoji badge
+  instead of an image field; one-off seed script instead of
+  seed-on-boot) — both were explicitly decided with the user before
+  implementation, not discovered mid-way.
+
+## Phase 2 — Ailments: NOT STARTED
 
 Next up per `specs/roadmap.md`:
 
-- `agents` table (name, short bio/role, avatar/placeholder).
-- Seed data: a handful of fictional AI agents.
-- List page of all agents, detail page per agent.
+- `ailments` table (name, description) — small fixed catalog.
+- `agent_ailments` join, linking agents to one or more ailments.
+- Ailments shown on the agent detail page, and an agent can report a
+  new ailment about themselves.
 
-No plan written yet — start by reading `specs/roadmap.md`'s Phase 1
+No plan written yet — start by reading `specs/roadmap.md`'s Phase 2
 section and proposing a plan per `CLAUDE.md`.

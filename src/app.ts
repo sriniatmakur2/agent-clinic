@@ -5,6 +5,7 @@ import fastifyView from "@fastify/view";
 import fastifyStatic from "@fastify/static";
 import ejs from "ejs";
 import { homeRoutes } from "./routes/home.js";
+import { agentRoutes } from "./routes/agents.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,6 +24,7 @@ export function buildApp(): FastifyInstance {
   });
 
   app.register(homeRoutes);
+  app.register(agentRoutes);
 
   return app;
 }

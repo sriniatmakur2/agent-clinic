@@ -6,3 +6,11 @@ export const bootLog = sqliteTable("boot_log", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   bootedAt: text("booted_at").notNull(),
 });
+
+export const agents = sqliteTable("agents", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  role: text("role").notNull(),
+  bio: text("bio").notNull(),
+  avatarEmoji: text("avatar_emoji").notNull(),
+});
