@@ -155,7 +155,7 @@ context. Update this at the end of every phase (see `CLAUDE.md`).
 
 ## Phase 4 — Browse therapists: DONE
 
-- Commit: _not yet committed_ (fill in the hash once the user commits).
+- Commit: `ee918e7` ("Phase 4: browse therapists") on `main`.
 - Decisions made with the user before implementation:
   - **Specialty is linked to the ailments catalog**, not a free-text
     column — a `therapist_specialties` join table, mirroring
